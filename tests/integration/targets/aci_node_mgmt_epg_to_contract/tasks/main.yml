@@ -1,0 +1,469 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Faiz Mohammad (@faizmoh) <faizmoh@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for ACI v5+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('5', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+  # CLEAN ENVIRONMENT
+  - name: ensuring OOB EPG doesn't exist before
+    cisco.aci.aci_node_mgmt_epg: &aci_oob_epg_absent
+      <<: *aci_info 
+      epg: anstest_oob
+      type: out_of_band
+      state: absent
+
+  - name: ensuring INB EPG doesn't exist before
+    cisco.aci.aci_node_mgmt_epg: &aci_inb_epg_absent
+      <<: *aci_info
+      epg: anstest_inb
+      type: in_band
+      bd: inb
+      encap: vlan-1604
+      state: absent
+
+  - name: creating new OOB EPG for testing
+    cisco.aci.aci_node_mgmt_epg: &aci_oob_epg_present
+      <<: *aci_oob_epg_absent
+      state: present
+
+  - name: creating new INB EPG for testing
+    cisco.aci.aci_node_mgmt_epg: &aci_inb_epg_present
+      <<: *aci_inb_epg_absent
+      state: present
+
+  # CREATE - INB
+  - name: Attach Provider contract to Inband EPG (check_mode)
+    cisco.aci.aci_node_mgmt_epg_to_contract: &aci_inb_epg_provide_present
+      <<: *aci_info
+      contract_type: provider
+      contract: aci_inb_http
+      epg: anstest_inb
+      epg_type: in_band
+      state: present
+    check_mode: true
+    register: inb_provide_present_check_mode
+
+  - name: Attach Provider contract to Inband EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_provide_present
+      priority: "{{ fakevar | default(omit) }}" # >>>> Omitting to test Default behaviour
+      provider_match: "{{ fakevar | default(omit) }}" # >>>> Omitting to test Default behaviour
+      state: "{{ fakevar | default(omit) }}"    # >>>> Omitting to test Default behaviour
+    register: inb_provide_present
+
+  - name: Attach Provider contract to Inband EPG again
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_provide_present
+    register: inb_idempotent_present
+
+  - name: Assert Provider Contracts were attached to Inband EPG
+    ansible.builtin.assert:
+      that:
+      - inb_provide_present_check_mode is changed
+      - inb_provide_present_check_mode.previous == []
+      - inb_provide_present_check_mode.current == []
+      - inb_provide_present_check_mode.proposed.fvRsProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsprov-aci_inb_http"
+      - inb_provide_present_check_mode.proposed.fvRsProv.attributes.tnVzBrCPName == 'aci_inb_http'
+      - inb_provide_present is changed
+      - inb_provide_present.previous == []
+      - inb_provide_present.current.0.fvRsProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsprov-aci_inb_http"
+      - inb_provide_present.current.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - inb_provide_present.current.0.fvRsProv.attributes.annotation == 'orchestrator:ansible'
+      - inb_provide_present.current.0.fvRsProv.attributes.prio == "unspecified"
+      - inb_provide_present.current.0.fvRsProv.attributes.matchT == "AtleastOne"
+      - inb_idempotent_present is not changed
+      - inb_idempotent_present.previous.0.fvRsProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsprov-aci_inb_http"
+      - inb_idempotent_present.previous.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - inb_idempotent_present.previous.0.fvRsProv.attributes.annotation == 'orchestrator:ansible'
+      - inb_idempotent_present.previous.0.fvRsProv.attributes.prio == "unspecified"
+      - inb_idempotent_present.current.0.fvRsProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsprov-aci_inb_http"
+      - inb_idempotent_present.current.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - inb_idempotent_present.current.0.fvRsProv.attributes.annotation == 'orchestrator:ansible'
+      - inb_idempotent_present.current.0.fvRsProv.attributes.prio == "unspecified"
+
+  - name: Attach Consumer contract to Inband EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract: &aci_inb_epg_consume_present
+      <<: *aci_inb_epg_provide_present
+      contract_type: consumer
+      contract: anstest_inb_db
+      provider_match: "{{ fakevar | default(omit) }}"
+    register: inb_consume_present
+
+  - name: Attach Taboo contract to Inband EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_consume_present
+      contract: aci_inb_https
+      contract_type: taboo
+    register: taboo_present
+
+  - name: Attach Interface contract to Inband EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_consume_present
+      contract: aci_inb_https
+      contract_type: interface
+    register: interface_present
+
+  - name: Assert all Contracts to Inband EPG were created
+    ansible.builtin.assert:
+      that:
+      - inb_consume_present is changed
+      - inb_consume_present.previous == []
+      - inb_consume_present.current.0.fvRsCons.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rscons-anstest_inb_db"
+      - inb_consume_present.current.0.fvRsCons.attributes.tnVzBrCPName == "anstest_inb_db"
+      - inb_consume_present.current.0.fvRsCons.attributes.annotation == 'orchestrator:ansible'
+      - inb_consume_present.current.0.fvRsCons.attributes.prio == "unspecified"
+      - taboo_present is changed
+      - taboo_present.previous == []
+      - taboo_present.current.0.fvRsProtBy.attributes.tnVzTabooName == 'aci_inb_https'
+      - taboo_present.current.0.fvRsProtBy.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsprotBy-aci_inb_https"
+      - interface_present is changed
+      - interface_present.previous == []
+      - interface_present.current.0.fvRsConsIf.attributes.tnVzCPIfName == 'aci_inb_https'
+      - interface_present.current.0.fvRsConsIf.attributes.dn == "uni/tn-mgmt/mgmtp-default/inb-anstest_inb/rsconsIf-aci_inb_https"
+
+
+  # CREATE - OOB
+  - name: Attach Provider contract to Out-of-Band EPG (check_mode)
+    cisco.aci.aci_node_mgmt_epg_to_contract: &aci_oob_epg_provide_present
+      <<: *aci_info
+      contract_type: provider
+      contract: aci_oob_http
+      epg: anstest_oob
+      type: out_of_band
+      state: present
+    check_mode: true
+    register: oob_provide_present_check_mode
+
+  - name: Attach Provider contract to Out-of-Band EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+    register: oob_provide_present
+
+  - name: Attach Provider contract to Out-of-Band EPG again
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+    register: oob_idempotent_present
+
+  - name: Assert Provider contracts to Out-of-Band EPG were attached
+    ansible.builtin.assert:
+      that:      
+      - oob_provide_present_check_mode is changed
+      - oob_provide_present_check_mode.previous == []
+      - oob_provide_present_check_mode.current == []
+      - oob_provide_present_check_mode.proposed.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'aci_oob_http'
+      - oob_provide_present_check_mode.proposed.mgmtRsOoBProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/oob-anstest_oob/rsooBProv-aci_oob_http"
+      - oob_provide_present is changed
+      - oob_provide_present.previous == []
+      - oob_provide_present.sent == oob_provide_present_check_mode.sent
+      - oob_provide_present.sent.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'aci_oob_http'
+      - oob_provide_present.sent.mgmtRsOoBProv.attributes.dn == "uni/tn-mgmt/mgmtp-default/oob-anstest_oob/rsooBProv-aci_oob_http"
+      - oob_provide_present.current.0.mgmtRsOoBProv.attributes.prio == "unspecified"
+      - oob_provide_present.current.0.mgmtRsOoBProv.attributes.annotation == 'orchestrator:ansible'
+
+  # UPDATE
+  - name: Update Consumer Contract to Inband EPG (check_mode)
+    cisco.aci.aci_node_mgmt_epg_to_contract: &update_inb_consumer_contract
+      <<: *aci_inb_epg_consume_present
+      priority: "level6"
+    check_mode: true
+    register: upd_inb_consumer_check_mode
+
+  - name: Update Consumer Contract to Inband EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *update_inb_consumer_contract
+    register: upd_inb_consumer
+
+  - name: Update Provider Contract to Inband EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_provide_present
+      priority: "level4"
+      provider_match: at_least_one
+    register: upd_inb_provider
+
+  - name: Update Provider Contract to Out-of-Band EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+        <<: *aci_oob_epg_provide_present
+        priority: "level4"
+    register: upd_oob_provider
+
+  - name: Assert Contract Update operations
+    ansible.builtin.assert:
+      that:
+      - upd_inb_consumer_check_mode is changed
+      - upd_inb_consumer_check_mode.previous.0.fvRsCons.attributes.prio == "unspecified"
+      - upd_inb_consumer_check_mode.current.0.fvRsCons.attributes.prio == "unspecified"
+      - upd_inb_consumer_check_mode.proposed.fvRsCons.attributes.prio == "level6"
+      - upd_inb_consumer is changed
+      - upd_inb_consumer.previous.0.fvRsCons.attributes.prio == "unspecified"
+      - upd_inb_consumer.current.0.fvRsCons.attributes.prio == "level6"
+      - upd_inb_consumer.previous.0.fvRsCons.attributes.tnVzBrCPName == "anstest_inb_db"
+      - upd_inb_consumer.current.0.fvRsCons.attributes.tnVzBrCPName == "anstest_inb_db"
+      - upd_inb_provider is changed
+      - upd_inb_provider.previous.0.fvRsProv.attributes.prio == "unspecified"
+      - upd_inb_provider.previous.0.fvRsProv.attributes.matchT == "AtleastOne"
+      - upd_inb_provider.current.0.fvRsProv.attributes.prio == "level4"
+      - upd_inb_provider.current.0.fvRsProv.attributes.matchT == "AtleastOne"
+      - upd_inb_provider.previous.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - upd_inb_provider.current.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - upd_oob_provider is changed
+      - upd_oob_provider.previous.0.mgmtRsOoBProv.attributes.prio == "unspecified"
+      - upd_oob_provider.current.0.mgmtRsOoBProv.attributes.prio == "level4"
+      - upd_oob_provider.previous.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == "aci_oob_http"
+      - upd_oob_provider.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == "aci_oob_http"
+      
+
+  #MISSING PARAMS
+  - name: Missing parameter - epg_name
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+      epg: "{{ fakevar | default(omit) }}"
+    ignore_errors: true
+    register: missing_param_present
+
+  - name: Missing Required parameter - contract_type
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+      contract_type: "{{ fakevar | default(omit) }}"
+    ignore_errors: true
+    register: missing_required_present
+
+  - name: Incompatible parameter - consumer contract to Out-of-Band EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+      contract_type: consumer
+    ignore_errors: true
+    register: oob_incompatible_present
+
+  - name: Incompatible parameter - provider_match with Out-of-Band EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+      provider_match: "at_most_one"
+    ignore_errors: true
+    register: oob_incompatible_present2
+
+  - name: Incompatible parameter - provider_match in consumer contract
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_provide_present
+      contract_type: consumer
+      provider_match: at_least_one
+    ignore_errors: true
+    register: inb_incompatible_present
+
+  - name: Assert Failure messages
+    ansible.builtin.assert:
+      that:       
+      - missing_param_present is failed
+      - 'missing_param_present.msg == "state is present but all of the following are missing: epg"'
+      - missing_required_present is failed
+      - 'missing_required_present.msg == "missing required arguments: contract_type"'
+      - oob_incompatible_present is failed
+      - 'oob_incompatible_present.msg == "only provider contract_type is supported for out_of_band epg_type."'
+      - oob_incompatible_present2 is failed
+      - 'oob_incompatible_present2.msg == "The provider_match argument is not supported for out_of_band Provider contracts"'
+      - inb_incompatible_present is failed
+      - 'inb_incompatible_present.msg == "the provider_match is only configurable for Provider Contracts"'
+
+  # QUERY
+  - name: Create another Provider contract to Inband EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_provide_present
+      contract: aci_inb_https
+
+  - name: Create another Provider contract to Out-of-Band EPG
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+      contract: aci_oob_https
+
+  - name: Query Inband EPG for Provider contract
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_provide_present
+      state: query
+    register: query_inb_provide_contract
+
+  - name: Query Inband EPG for Consumer contract
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_consume_present
+      state: query
+    register: query_inb_consume_contract
+
+  - name: Query Out-of-Band EPG for Provider contract
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+      state: query
+    register: query_oob_provide_contract
+
+  - name: Get all Inband EPG provider bindings
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_info
+      epg_type: in_band
+      tenant: "{{ fakevar | default(omit) }}"
+      state: query
+      contract_type: provider
+    register: query_inb_all
+    ignore_errors: yes
+
+  - name: Get all Out_of_Band EPG provider bindings
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_info
+      epg_type: out_of_band
+      tenant: "{{ fakevar | default(omit) }}"
+      state: query
+      contract_type: provider
+    register: query_oob_all
+    ignore_errors: yes
+
+  - name: Missing required param - failure message works
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_info
+      state: query
+      contract_type: provider
+      epg_type: "{{ fakevar | default(omit) }}"
+    ignore_errors: true
+    register: missing_required_query
+
+  - name: Assert INB & OOB contracts were queried
+    ansible.builtin.assert:
+      that:
+      - query_inb_provide_contract is not changed
+      - query_inb_provide_contract.current.0.mgmtInB.attributes.name == "anstest_inb"
+      - query_inb_provide_contract.current.0.mgmtInB.children.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - query_inb_provide_contract.current.0.mgmtInB.children.0.fvRsProv.attributes.prio == "level4"
+      - query_inb_provide_contract.current.0.mgmtInB.children.0.fvRsProv.attributes.matchT == "AtleastOne"
+      - query_inb_consume_contract is not changed
+      - query_inb_consume_contract.current.0.mgmtInB.attributes.name == "anstest_inb"
+      - query_inb_consume_contract.current.0.mgmtInB.children.0.fvRsCons.attributes.tnVzBrCPName == "anstest_inb_db"
+      - query_inb_consume_contract.current.0.mgmtInB.children.0.fvRsCons.attributes.prio  == "level6"
+      - query_oob_provide_contract is not changed
+      - query_oob_provide_contract.current.0.mgmtOoB.attributes.name == "anstest_oob"
+      - query_oob_provide_contract.current.0.mgmtOoB.children.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == "aci_oob_http"
+      - query_oob_provide_contract.current.0.mgmtOoB.children.0.mgmtRsOoBProv.attributes.prio == "level4"
+      - query_inb_all is not changed
+      - query_inb_all.current | length > 1
+      - query_inb_all.current.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - query_inb_all.current.0.fvRsProv.attributes.prio == "level4"
+      - query_inb_all.current.0.fvRsProv.attributes.matchT == "AtleastOne"
+      - query_inb_all.current.1.fvRsProv.attributes.tnVzBrCPName == "aci_inb_https"
+      - query_inb_all.current.1.fvRsProv.attributes.prio == "unspecified"
+      - query_inb_all.current.1.fvRsProv.attributes.matchT == "AtleastOne"
+      - query_oob_all is not changed
+      - query_oob_all.current | length > 1
+      - query_oob_all.current.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == "aci_oob_http"
+      - query_oob_all.current.0.mgmtRsOoBProv.attributes.prio == "level4"
+      - query_oob_all.current.1.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == "aci_oob_https"
+      - query_oob_all.current.1.mgmtRsOoBProv.attributes.prio == "unspecified"
+      - missing_required_query is failed
+      - 'missing_required_query.msg == "missing required arguments: epg_type"'
+
+  # DELETE
+  - name: Delete inb consumer binding - check mode works
+    cisco.aci.aci_node_mgmt_epg_to_contract: &aci_inb_epg_consume_absent
+      <<: *aci_inb_epg_consume_present
+      state: absent
+    check_mode: true
+    register: consume_absent_check_mode
+
+  - name: Delete inb consumer binding
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_consume_absent
+    register: consume_absent
+
+  - name: Delete inb consumer binding again
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_consume_absent
+    register: consume_absent_idempotent    
+
+  - name: Delete inb provider binding
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_provide_present
+      state: absent
+    register: inb_provide_absent
+
+  - name: Delete oob provider binding
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_oob_epg_provide_present
+      state: absent
+    register: oob_provide_absent
+
+  - name: Missing param - failure message works
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_consume_absent
+      contract: "{{ fakevar | default(omit) }}"
+    ignore_errors: true
+    register: missing_param_absent
+
+  - name: Missing required param - failure message works
+    cisco.aci.aci_node_mgmt_epg_to_contract:
+      <<: *aci_inb_epg_consume_absent
+      epg_type: "{{ fakevar | default(omit) }}"
+    ignore_errors: true
+    register: missing_required_absent
+
+  - name: Assert that INB & OOB Contract were deleted
+    ansible.builtin.assert:
+      that:
+      - consume_absent_check_mode is changed
+      - consume_absent_check_mode.previous.0.fvRsCons is defined    
+      - consume_absent_check_mode.proposed == {}
+      - consume_absent_check_mode.current.0.fvRsCons.attributes.tnVzBrCPName == "anstest_inb_db"
+      - consume_absent_check_mode.current.0.fvRsCons.attributes.prio == "level6"
+      - consume_absent is changed
+      - consume_absent.previous == consume_absent_check_mode.previous
+      - consume_absent.current == []
+      - consume_absent.previous.0.fvRsCons.attributes.tnVzBrCPName == "anstest_inb_db"
+      - consume_absent.previous.0.fvRsCons.attributes.prio == "level6"
+      - consume_absent_idempotent is not changed
+      - consume_absent_idempotent.current == []
+      - consume_absent_idempotent.previous == []
+      - inb_provide_absent is changed
+      - inb_provide_absent.current == []
+      - inb_provide_absent.previous.0.fvRsProv.attributes.tnVzBrCPName == "aci_inb_http"
+      - inb_provide_absent.previous.0.fvRsProv.attributes.prio == "level4"
+      - inb_provide_absent.previous.0.fvRsProv.attributes.matchT == "AtleastOne"
+      - oob_provide_absent is changed
+      - oob_provide_absent.previous.0.mgmtRsOoBProv.attributes.tnVzOOBBrCPName == 'aci_oob_http'
+      - oob_provide_absent.previous.0.mgmtRsOoBProv.attributes.prio == 'level4'
+      - oob_provide_absent.current == []
+      - missing_param_absent is failed
+      - 'missing_param_absent.msg == "state is absent but all of the following are missing: contract"'
+      - missing_required_absent is failed
+      - 'missing_required_absent.msg == "missing required arguments: epg_type"'
+
+  #CLEANUP
+  - name: Cleanup OOB epg
+    cisco.aci.aci_node_mgmt_epg:
+      <<: *aci_oob_epg_absent
+
+  - name: Cleanup INB epg
+    cisco.aci.aci_node_mgmt_epg:
+      <<: *aci_inb_epg_absent
