@@ -12,6 +12,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_vmm_enhanced_lag_policy
+version_added: "2.12.0"
 short_description: Manage Enhanced LACP Policy for Virtual Machine Manager (VMM) in Cisco ACI (lacp:EnhancedLagPol)
 description:
 - Manage Enhanced LACP Policy for VMM domains on Cisco ACI fabrics.

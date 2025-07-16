@@ -13,6 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_oob_contract
+version_added: "2.12.0"
 short_description: Manage Out-of-Band (OOB) Contract resources (vz:OOBBrCP)
 description:
 - Manage Out-of-Band (OOB) Contract resources on Cisco ACI fabrics.

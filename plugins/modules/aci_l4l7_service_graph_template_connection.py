@@ -14,6 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l4l7_service_graph_template_connection
+version_added: "2.12.0"
 short_description: Manage L4-L7 Service Graph Template Abs Connections (vns:AbsConnection)
 description:
 - Manage Layer 4 to Layer 7 (L4-L7) Service Graph Template Connections.

@@ -14,6 +14,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_l4l7_device_selection_interface_context
+version_added: "2.12.0"
 short_description: Manage L4-L7 Device Selection Policy Logical Interface Contexts (vns:LIfCtx)
 description:
 - Manage L4-L7 Device Selection Policy Logical Interface Contexts
