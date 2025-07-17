@@ -16,20 +16,34 @@ This changelog describes all changes made to the modules and plugins included in
 Minor Changes
 -------------
 
-- Add description, console_log_severity, local_file_log_format, and console_log_format to aci_syslog_group module.
-- Add enhanced_log and rfc5424-ts options to attribute format of aci_syslog_group module.
-- Add epg_cos, epg_cos_preference, ipam_dhcp_override, ipam_enabled, ipam_gateway, lag_policy_name, netflow_direction, primary_encap_inner, and secondary_encap_inner atributes to aci_epg_to_domain module.
-- Add missing options to priority attribute and vrf to scope attribute in aci_contract module.
-- Add nutanix support for aci_aep_to_domain, aci_domain, aci_domain_to_encap_pool, aci_domain_to_vlan_pool, aci_vmm_controller, aci_vmm_credential modules.
-- Add pod_id attribute to aci_switch_policy_vpc_protection_group module.
+- Add aci_l4l7_device_selection_interface_context, aci_l4l7_device_selection_policy, aci_l4l7_service_graph_template, aci_l4l7_service_graph_template_connection, aci_l4l7_service_graph_template_connection_to_connector, aci_l4l7_service_graph_template_functional_connection, aci_l4l7_service_graph_template_node and aci_l4l7_service_graph_template_term_node modules
+- Add aci_oob_contract module
+- Add aci_vmm_enhanced_lag_policy module
+- Add missing atributes to aci_epg_to_domain: epgCos, epgCosPref, ipamDhcpOverride, ipamEnabled, ipamGateway, lagPolicyName, netflowDir, primaryEncapInner, secondaryEncapInner
+- Add missing options to priority and vrf to scope in aci_contract module
+- Add missing options to priority and vrf to scope in aci_oob_contract module
+- Add module aci_port_channel_member_policy to manage port channel member policies
+- Add node_mgmt_epg_to_contract module
+- Add nutanix support for aci_aep_to_domain, aci_domain, aci_domain_to_encap_pool, aci_domain_to_vlan_pool, aci_vmm_controller, aci_vmm_credential
+- Add pod_id attribute to aci_switch_policy_vpc_protection_group module
+- Added enhanced_log option as an alias to rfc
+- Added support for description to aci_syslog_group module.
+- Added testing support for Ansible Core 2.19
+- Added two new attributes to aci_syslog_group and option for rfc5424-ts for format
+- Addition of aci_l4l7_policy_based_redirect and related modules
+- Addition of module aci_l4l7_concrete_device and its test file
+- Addition of module aci_l4l7_device and its test file
+- Create module for vrf_fallback_route and corresponding test file
+- D
+- E
 
 Bugfixes
 --------
 
-- Fix API call and index error for non-existing configExportP in aci_config_snapshot.
-- Fix the aci_access_port_block_to_access_port module to query a specific object with the object name.
-- Fix to read the last_as from the module params in aci_action_rule_set_as_path.
-- Fix type of subnet_control in aci_bd_subnet from string to list of strings.
+- Fix api call and index error for non-existing configExportP in aci_config_snapshot
+- Fix to read the last_as from the module params in aci_action_rule_set_as_path
+- Fix type of subnet_control in aci_bd_subnet from string to list of strings
+- Fixed the aci_access_port_block_to_access_port module to query a specific object with the object name
 
 New Modules
 -----------
