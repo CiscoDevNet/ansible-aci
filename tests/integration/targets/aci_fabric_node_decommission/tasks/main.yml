@@ -1,0 +1,260 @@
+# Test code for the ACI modules
+# Copyright: (c) 2017, Bruno Calogero <brunocalogero@hotmail.com>
+# Copyright: (c) 2023, Gaspard Micol <gmicol@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: '{{ aci_output_level | default("info") }}'
+
+# CLEAN ENVIRONMENT
+- name: Ensure that the fabric node exists
+  cisco.aci.aci_fabric_node:
+    <<: *aci_info
+    name: "{{ aci_fabric_node_name }}"
+    node_type: unspecified
+    pod_id: "{{ aci_fabric_pod_id }}"
+    node_id: "{{ aci_fabric_node_id }}"
+    serial: "{{ aci_fabric_serial }}"
+    state: present
+
+# SETUP
+- name: Commission the fabric node
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: absent
+  register: commission_node
+
+- name: Query fabric node to check the node is commissioned - $query_commission_node_1
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: query
+  register: query_commission_node_1
+
+- name: Assertion check for query fabric node to check the node is commissioned
+  ansible.builtin.assert:
+    that:
+      - query_commission_node_1 is not changed
+      - query_commission_node_1.current == []
+
+# TEST
+- name: Decommission the fabric node (check_mode) - $cm_decommission_node
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: present
+    output_level: debug
+  check_mode: true
+  register: cm_decommission_node
+
+- name: Decommission the fabric node - $decommission_node
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: present
+  register: decommission_node
+
+- name: Decommission the fabric node again - $decommission_node_again
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: present
+  register: decommission_node_again
+
+- name: Query the decommissioned fabric node - $query_decommissioned_node
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: query
+  register: query_decommissioned_node
+
+- name: Query all decommissioned fabric nodes - $query_all_decommissioned_nodes
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    state: query
+  register: query_all_decommissioned_nodes
+
+- name: Assertion check for decommission the fabric node
+  ansible.builtin.assert:
+    that:
+      - cm_decommission_node is changed
+      - cm_decommission_node.current == []
+      - cm_decommission_node.previous == []
+      - cm_decommission_node.proposed.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - cm_decommission_node.proposed.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - cm_decommission_node.proposed.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - decommission_node is changed
+      - decommission_node.current.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - decommission_node.current.0.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - decommission_node.current.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - decommission_node.previous == []
+      - decommission_node_again is not changed
+      - decommission_node_again.current.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - decommission_node_again.current.0.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - decommission_node_again.current.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - decommission_node_again.previous.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - decommission_node_again.previous.0.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - decommission_node_again.previous.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - query_decommissioned_node is not changed
+      - query_decommissioned_node.current.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - query_decommissioned_node.current.0.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - query_decommissioned_node.current.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - query_decommissioned_node.current.0.fabricRsDecommissionNode.attributes.targetId == "201"
+      - query_all_decommissioned_nodes is not changed
+      - query_all_decommissioned_nodes.current | length >= 1
+      - query_all_decommissioned_nodes.current.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - query_all_decommissioned_nodes.current.0.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - query_all_decommissioned_nodes.current.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - query_all_decommissioned_nodes.current.0.fabricRsDecommissionNode.attributes.targetId == "201"
+
+- name: Commission the fabric node (check_mode) - $cm_commission_node
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: absent
+    output_level: debug
+  check_mode: true
+  register: cm_commission_node
+
+- name: Commission the fabric node - $commission_node
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: absent
+  register: commission_node
+
+- name: Commission the fabric node again - $commission_node_again
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: absent
+  register: commission_node_again
+
+- name: Query the commissioned fabric node - $query_commissioned_node_2
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: query
+  register: query_commissioned_node_2
+
+- name: Assertion check for commission the fabric node
+  ansible.builtin.assert:
+    that:
+      - cm_commission_node is changed
+      - cm_commission_node.current.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - cm_commission_node.current.0.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - cm_commission_node.current.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - cm_commission_node.previous.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - cm_commission_node.previous.0.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - cm_commission_node.previous.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - commission_node is changed
+      - commission_node.current == []
+      - commission_node.previous.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - commission_node.previous.0.fabricRsDecommissionNode.attributes.removeFromController == "no"
+      - commission_node.previous.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - commission_node_again is not changed
+      - commission_node_again.current == []
+      - commission_node_again.previous == []
+      - query_commissioned_node_2 is not changed
+      - query_commissioned_node_2.current == []
+
+- name: Decommission the fabric node and remove from the controller (check_mode) - $cm_after_removed_from_controller
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    remove_from_controller: true
+    state: present
+    output_level: debug
+  check_mode: true
+  register: cm_after_removed_from_controller
+
+- name: Decommission the fabric node and remove from the controller - $after_removed_from_controller
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    remove_from_controller: true
+    state: present
+  register: after_removed_from_controller
+
+- name: Decommission the fabric node and remove from the controller again - $after_removed_from_controller_again
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    remove_from_controller: true
+    state: present
+  register: after_removed_from_controller_again
+
+- name: Query the decommissioned fabric node which is removed from the controller - $query_after_removed_from_controller
+  cisco.aci.aci_fabric_node_decommission:
+    <<: *aci_info
+    pod_id: 1
+    node_id: 201
+    state: query
+  register: query_after_removed_from_controller
+  until:
+    - query_after_removed_from_controller.current is defined
+    - query_after_removed_from_controller.current == []
+  retries: 40
+  delay: 10
+
+- name: Assertion check for decommission the fabric node and remove from the controller
+  ansible.builtin.assert:
+    that:
+      - cm_after_removed_from_controller is changed
+      - cm_after_removed_from_controller.current == []
+      - cm_after_removed_from_controller.previous == []
+      - cm_after_removed_from_controller.proposed.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - cm_after_removed_from_controller.proposed.fabricRsDecommissionNode.attributes.removeFromController == "yes"
+      - cm_after_removed_from_controller.proposed.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - after_removed_from_controller is changed
+      - after_removed_from_controller.current.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - after_removed_from_controller.current.0.fabricRsDecommissionNode.attributes.removeFromController == "yes"
+      - after_removed_from_controller.current.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - after_removed_from_controller.previous == []
+      - after_removed_from_controller_again is not changed
+      - after_removed_from_controller_again.current.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - after_removed_from_controller_again.current.0.fabricRsDecommissionNode.attributes.removeFromController == "yes"
+      - after_removed_from_controller_again.current.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+      - after_removed_from_controller_again.previous.0.fabricRsDecommissionNode.attributes.dn == "uni/fabric/outofsvc/rsdecommissionNode-[topology/pod-1/node-201]"
+      - after_removed_from_controller_again.previous.0.fabricRsDecommissionNode.attributes.removeFromController == "yes"
+      - after_removed_from_controller_again.previous.0.fabricRsDecommissionNode.attributes.tDn == "topology/pod-1/node-201"
+
+# CLEANUP
+- name: Ensure that the fabric node exists
+  cisco.aci.aci_fabric_node:
+    <<: *aci_info
+    name: "{{ aci_fabric_node_name }}"
+    role: spine
+    node_type: unspecified
+    pod_id: "{{ aci_fabric_pod_id }}"
+    node_id: "{{ aci_fabric_node_id }}"
+    serial: "{{ aci_fabric_serial }}"
+    state: present
