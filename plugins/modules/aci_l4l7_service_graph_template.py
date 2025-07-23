@@ -278,7 +278,7 @@ def main():
     type = module.params.get("type")
     service_rule_type = module.params.get("service_rule_type")
     filter_between_nodes = module.params.get("filter_between_nodes")
-    description = (module.params.get("description"),)
+    description = module.params.get("description")
 
     aci = ACIModule(module)
 
