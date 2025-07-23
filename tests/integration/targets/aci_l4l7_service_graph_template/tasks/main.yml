@@ -49,6 +49,7 @@
     tenant: ansible_tenant
     service_graph: ansible_service_graph
     ui_template_type: one_node_fw_routed
+    description: my template
     state: present
   check_mode: true
   register: create_sgt_cm
@@ -66,10 +67,12 @@
     - create_sgt_cm.proposed.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
     - create_sgt_cm.proposed.vnsAbsGraph.attributes.name == "ansible_service_graph"
     - create_sgt_cm.proposed.vnsAbsGraph.attributes.uiTemplateType == "ONE_NODE_FW_ROUTED"
+    - create_sgt_cm.proposed.vnsAbsGraph.attributes.descr == "my template"
     - create_sgt.previous == []
     - create_sgt.current.0.vnsAbsGraph.attributes.dn == "uni/tn-ansible_tenant/AbsGraph-ansible_service_graph"
     - create_sgt.current.0.vnsAbsGraph.attributes.name == "ansible_service_graph"
     - create_sgt.current.0.vnsAbsGraph.attributes.uiTemplateType == "ONE_NODE_FW_ROUTED"
+    - create_sgt.current.0.vnsAbsGraph.attributes.descr == "my template"
 
 # ADD service graph template again to check idempotence
 - name: Create L4-L7 Service Graph Template again
