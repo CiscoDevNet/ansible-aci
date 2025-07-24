@@ -226,6 +226,10 @@ def main():
 
     aci = ACIModule(module)
 
+    target_dn = None
+    if pod_id and node_id:
+        target_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
+
     aci.construct_url(
         root_class=dict(
             aci_class="fabricOOServicePol",
@@ -234,7 +238,7 @@ def main():
         subclass_1=dict(
             aci_class="fabricRsDecommissionNode",
             aci_rn="rsdecommissionNode-[topology/pod-{0}/node-{1}]".format(pod_id, node_id),
-            target_filter={},
+            target_filter={"tDn": target_dn},
         ),
     )
 
@@ -244,7 +248,7 @@ def main():
         aci.payload(
             aci_class="fabricRsDecommissionNode",
             class_config=dict(
-                tDn="topology/pod-{0}/node-{1}".format(pod_id, node_id),
+                tDn=target_dn,
                 removeFromController="yes" if remove_from_controller else "no",
             ),
         )
@@ -252,10 +256,12 @@ def main():
         aci.post_config()
 
     elif state == "absent":  # Commission
+        # The aci.delete_config function removes the object directly from APIC, which can interrupt the commission or decommission process before it finishes.
+        # Because of that the Fabric Node may enter a bad state.
         aci.payload(
             aci_class="fabricRsDecommissionNode",
             class_config=dict(
-                tDn="topology/pod-{0}/node-{1}".format(pod_id, node_id),
+                tDn=target_dn,
                 status="deleted",
             ),
         )
