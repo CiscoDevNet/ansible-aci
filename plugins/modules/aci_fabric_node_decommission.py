@@ -29,6 +29,7 @@ options:
     description:
     - Completely deletes the node configuration from the controller during decommissioning.
     - To register the fabric node, use M(cisco.aci.aci_fabric_node).
+    - The APIC defaults to O(remove_from_controller=false) when unset during creation.
     type: bool
   state:
     description:
