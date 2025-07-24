@@ -149,9 +149,11 @@ Certain modules and options in the collection are only available from specific v
 
 To find EOL announcements for ACI versions, refer to the [End-of-Life and End-of-Sale Notices](https://www.cisco.com/c/en/us/products/cloud-systems-management/application-policy-infrastructure-controller-apic/eos-eol-notice-listing.html) page.
 
+As a Red Hat Ansible [Certified Content](https://catalog.redhat.com/software/search?target_platforms=Red%20Hat%20Ansible%20Automation%20Platform), this collection is entitled to [support](https://access.redhat.com/support/) through [Ansible Automation Platform](https://www.redhat.com/en/technologies/management/ansible) (AAP).
+
 ## Release Notes
 
-See the [Changelog](CHANGELOG.rst) for full release notes.
+See the [Changelog](https://github.com/CiscoDevNet/ansible-aci/blob/master/CHANGELOG.rst) for full release notes.
 
 ## Related Information
 
@@ -163,4 +165,4 @@ For further information and guides, refer to the following:
 
 ## License Information
 
-This collection is licensed under the [GNU General Public License v3.0](LICENSE)
+This collection is licensed under the [GNU General Public License v3.0](https://github.com/CiscoDevNet/ansible-aci/blob/master/LICENSE)
