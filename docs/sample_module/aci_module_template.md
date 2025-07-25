@@ -1,4 +1,4 @@
-.. code-block:: python
+```python
 
   #!/usr/bin/python
   # -*- coding: utf-8 -*-
@@ -47,6 +47,10 @@
       - The object_prop3 must be in the range 1 to 100. The default value is 50.
       type: Property's data type eg. 'str'
       required: true
+  child_object_prop:
+    description:
+    - Description of the child class object property
+    - This is required for child class object B(config:<name_of_child_class>)
   state:
       description:
       - Use C(present) or C(absent) for adding or removing.
@@ -325,3 +329,4 @@
   if __name__ == "__main__":
       main()
   
+```
