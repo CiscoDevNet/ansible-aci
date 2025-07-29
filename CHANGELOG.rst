@@ -4,6 +4,20 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.12.1
+=======
+
+Release Summary
+---------------
+
+Release v2.12.1 of the ``ansible-aci`` collection on 2025-07-29.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.12.0.
+
+Bugfixes
+--------
+
+- Modified code to get description value without an explicit default in aci_l4l7_service_graph_template
+
 v2.12.0
 =======
 

@@ -381,6 +381,17 @@ releases:
         name: aci_vrf_fallback_route_group
         namespace: ''
     release_date: '2025-07-17'
+  2.12.1:
+    changes:
+      bugfixes:
+        - Modified code to get description value without an explicit default in aci_l4l7_service_graph_template
+      release_summary: 'Release v2.12.1 of the ``ansible-aci`` collection on 2025-07-29.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.12.0.
+
+        '
+    release_date: '2025-07-29'
   2.2.0:
     changes:
       bugfixes:
