@@ -452,15 +452,14 @@ This method uses the root class (e.g., fvTenant) and optional subclass dictionar
 * When the `state` is not `query`:The URL includes the full DN (base URL (to access the APIC) with the distinguished name of the object (to access the object)) of the object, and the response is typically limited to configuration data (config-only).
 * When `state` is `query`, the URL and filter string used depend on which parameters are passed to the object. This method handles the complexity so that it is easier to add new modules and ensures that all modules are consistent in the type of data returned.
 
-> [!IMPORTANT]
-> The design goal for querying the objects, is to use the provided ID parameters to return the most specific data possible:
-> * If no ID parameters are given, return all objects of the class.
-> * If only some ID parameters are provided, return all objects that match those IDs.
-
     * **Query specific object**: the URL is constructed to target a specific object within the module's class using its distinguished name. The filter string is typically not applied, allowing retrieval of the full object data. This approach simplifies module development by handling the URL construction dynamically and ensures consistent data retrieval for individual objects.
 
     * **Query all objects**: the URL is built to query all objects of the specified class. If a target filter is provided, it is applied as a query parameter to restrict the returned data to matching objects. This method manages the complexity of querying collections, making it easier to add new modules and maintain uniformity in the data returned across modules.
 
+> [!IMPORTANT]
+> The design goal for querying the objects, is to use the provided ID parameters to return the most specific data possible:
+> * If no ID parameters are given, return all objects of the class.
+> * If only some ID parameters are provided, return all objects that match those IDs.
 
 > [!TIP]
 >  For more information on the ACI REST APIs and how to construct URLs [ACI REST API Guide](https://www.cisco.com/c/en/us/td/docs/dcn/aci/apic/all/apic-rest-api-configuration-guide/cisco-apic-rest-api-configuration-guide-42x-and-later/m_using_the_rest_api.html).
