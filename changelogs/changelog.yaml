@@ -381,6 +381,22 @@ releases:
         name: aci_vrf_fallback_route_group
         namespace: ''
     release_date: '2025-07-17'
+  2.13.0:
+    changes:
+      bugfixes:
+        - Extend allowed ranges for card and subPort in interface input of aci_interface_config
+          module
+        - Modified code to get description value without an explicit default in aci_l4l7_service_graph_template
+      minor_changes:
+        - Added module to manage the Commissioning and Decommissioning of the Fabric
+          Node
+      release_summary: 'Release v2.13.0 of the ``ansible-aci`` collection on 2025-08-22.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.12.0.
+
+        '
+    release_date: '2025-08-22'
   2.2.0:
     changes:
       bugfixes:
