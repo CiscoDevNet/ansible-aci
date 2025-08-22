@@ -135,11 +135,11 @@
           - invalid_interface is not changed
           - invalid_interface.msg is match("^Interface{{':'}} .+? is invalid; The format must be either card\/port\/sub_port\(1\/1\/1\) or card\/port\(1\/1\)")
           - invalid_card is not changed
-          - invalid_card.msg is match("^Card ID{{':'}} .+? is invalid; it must be in the range of 1 to 64.")
+          - invalid_card.msg is match("^Card ID{{':'}} .+? is invalid; it must be in the range of 1 to 255.")
           - invalid_port is not changed
           - invalid_port.msg is match("^Port ID{{':'}} .+? is invalid; it must be in the range of 1 to 128.")
           - invalid_sub_port is not changed
-          - invalid_sub_port.msg is match("^Sub Port ID{{':'}} .+? is invalid; it must be in the range of 0 to 16.")
+          - invalid_sub_port.msg is match("^Sub Port ID{{':'}} .+? is invalid; it must be in the range of 0 to 64.")
 
     - name: Ensure Interface 501 with leaf access with policy_group and without sub port - switch_port absent
       cisco.aci.aci_interface_config: &interface_501_absent

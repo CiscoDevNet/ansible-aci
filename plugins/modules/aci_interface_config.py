@@ -76,9 +76,9 @@ options:
     description:
     - The address of the interface.
     - The format of the interface value should be 1/1/1 (card/port_id/sub_port) or 1/1 (card/port_id).
-    - The Card ID must be in the range of 1 to 64.
+    - The Card ID must be in the range of 1 to 255.
     - The Port ID must be in the range of 1 to 128.
-    - The Sub Port ID must be in the range of 0 to 16
+    - The Sub Port ID must be in the range of 0 to 64.
     type: str
   state:
     description:
@@ -389,15 +389,15 @@ def main():
             else:
                 aci.fail_json(msg="Interface: {0} is invalid; The format must be either card/port/sub_port(1/1/1) or card/port(1/1)".format(interface))
 
-            if int(card) not in range(1, 65):
-                aci.fail_json(msg="Card ID: {0} is invalid; it must be in the range of 1 to 64.".format(card))
+            if int(card) not in range(1, 256):
+                aci.fail_json(msg="Card ID: {0} is invalid; it must be in the range of 1 to 255.".format(card))
 
             if int(port_id) not in range(1, 129):
                 aci.fail_json(msg="Port ID: {0} is invalid; it must be in the range of 1 to 128.".format(port_id))
 
             # Sub Port ID - 0 is default value
-            if int(sub_port) not in range(0, 17):
-                aci.fail_json(msg="Sub Port ID: {0} is invalid; it must be in the range of 0 to 16.".format(sub_port))
+            if int(sub_port) not in range(0, 65):
+                aci.fail_json(msg="Sub Port ID: {0} is invalid; it must be in the range of 0 to 64.".format(sub_port))
     except ValueError as error:
         aci.fail_json(msg="Interface configuration failed due to: {0}".format(error))
 
