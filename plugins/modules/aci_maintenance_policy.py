@@ -61,26 +61,28 @@ options:
     choices: [ notify_always_between_sets, notify_never, notify_only_on_failures ]
   smu_operation:
     description:
-    - Specifies SMU operation.
+    - Specifies that the upgrade is a Software Maintenance Upgrade (SMU) patch operation.
     type: str
     choices: [ smu_install, smu_uninstall ]
   smu_operation_flags:
     description:
-    - Specifies SMU operation flags
+    - Specifies the Software Maintenance Upgrade (SMU) patch operation flags
     - Indicates if node should be reloaded immediately or skip auto reload on SMU Install/Uninstall.
     type: str
     choices: [ smu_reload_immediate, smu_reload_skip ]
   sr_upgrade:
     description:
-    - The SR firware upgrade.
+    - Specifies that the upgrade is a Silent Roll (SR) package upgrade.
     type: bool
+    aliases: [ silent_roll_upgrade ]
   sr_version:
     description:
-    - The SR version of the compatibility catalog.
+    - The target firmware version of the Silent Roll (SR) package upgrade to install.
     type: str
+    aliases: [ silent_roll_version ]
   version:
     description:
-    - The version of the compatibility catalog.
+    - The target firmware version to install.
     type: str
   version_check_override:
     description:
@@ -303,8 +305,8 @@ def main():
         notify_condition=dict(type="str", choices=list(MATCH_NOTIFY_CONDITION_MAPPING.keys())),
         smu_operation=dict(type="str", choices=list(MATCH_SMU_OPERATION_MAPPING.keys())),
         smu_operation_flags=dict(type="str", choices=list(MATCH_SMU_OPERATION_FLAGS_MAPPING.keys())),
-        sr_upgrade=dict(type="bool"),
-        sr_version=dict(type="str"),
+        sr_upgrade=dict(type="bool", aliases=["silent_roll_upgrade"]),
+        sr_version=dict(type="str", aliases=["silent_roll_version"]),
         version=dict(type="str"),
         version_check_override=dict(type="str", choices=list(MATCH_TRIGGER_MAPPING.keys())),
         description=dict(type="str", aliases=["descr"]),
