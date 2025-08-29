@@ -110,6 +110,7 @@ action_groups:
     - aci_fabric_management_access_https_cipher
     - aci_fabric_node
     - aci_fabric_node_control
+    - aci_fabric_node_decommission
     - aci_fabric_pod
     - aci_fabric_pod_connectivity_profile
     - aci_fabric_pod_external_tep
