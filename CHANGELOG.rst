@@ -4,6 +4,29 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.13.0
+=======
+
+Release Summary
+---------------
+
+Release v2.13.0 of the ``ansible-aci`` collection on 2025-09-06.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.12.0.
+
+Minor Changes
+-------------
+
+- Added module to manage the Commissioning and Decommissioning of the Fabric Node
+- Adding guidelines for Ansible ACI module developement
+- Change the format from reStructuredText file type to Markdown type.
+- Changed the format of the documentation developing_aci_modules_guildelines is the new changed file along with sections segrigated in other files.
+
+Bugfixes
+--------
+
+- Extend allowed ranges for card and subPort in interface input of aci_interface_config module
+- Modified code to get description value without an explicit default in aci_l4l7_service_graph_template
+
 v2.12.0
 =======
 
