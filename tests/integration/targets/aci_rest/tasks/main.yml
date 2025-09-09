@@ -6,7 +6,7 @@
 
 - name: Test that we have an ACI APIC host, ACI username and ACI password
   ansible.builtin.fail:
-    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+    msg: "Please define the following variables: aci_hostname, aci_username and aci_password."
   when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
 
 - include_tasks: yaml_inline.yml
