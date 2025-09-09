@@ -69,6 +69,13 @@ options:
     description:
     - The page number to return.
     type: int
+  convert_values_to_str:
+    description:
+    - When O(convert_values_to_str=true), this attribute converts input object values to strings.
+    - This ensures compatibility with Jinja2 version 3.1.6 and above.
+    - To disable this conversion, set O(convert_values_to_str=false).
+    type: bool
+    default: true
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -398,6 +405,7 @@ def main():
         rsp_subtree_preserve=dict(type="bool", default=False),
         page_size=dict(type="int"),
         page=dict(type="int"),
+        convert_values_to_str=dict(type="bool", default=True),  # To support Jinja2 3.1.6 and later versions.
     )
 
     module = AnsibleModule(
@@ -413,6 +421,7 @@ def main():
     annotation = module.params.get("annotation")
     page_size = module.params.get("page_size")
     page = module.params.get("page")
+    convert_values_to_str = module.params.get("convert_values_to_str")
     if module.params.get("method") != "get" and page_size:
         module.fail_json(msg="Pagination parameters (page and page_size) are only valid for GET method")
 
@@ -451,13 +460,13 @@ def main():
         if content and isinstance(content, dict):
             # Validate inline YAML/JSON
             add_annotation(annotation, payload)
-            payload = json.dumps(payload)
+            payload = json.dumps(process_rest_payload(payload, convert_values_to_str))
         elif payload and isinstance(payload, str) and HAS_YAML:
             try:
                 # Validate YAML/JSON string
                 payload = yaml.safe_load(payload)
                 add_annotation(annotation, payload)
-                payload = json.dumps(payload)
+                payload = json.dumps(process_rest_payload(payload, convert_values_to_str))
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: {0}".format(to_text(e)), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
@@ -535,6 +544,26 @@ def main():
 
     # Report success
     aci.exit_json(**aci.result)
+
+
+def process_rest_payload(payload, convert_values_to_str):
+    if convert_values_to_str:
+        if isinstance(payload, str):
+            payload = convert_payload_values_to_str(json.loads(payload))
+        else:
+            payload = convert_payload_values_to_str(payload)
+    return payload
+
+
+def convert_payload_values_to_str(data):
+    if isinstance(data, dict):
+        return {k: convert_payload_values_to_str(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [convert_payload_values_to_str(item) for item in data]
+    elif isinstance(data, int) or isinstance(data, bool) or isinstance(data, float):
+        return str(data)
+    else:
+        return data
 
 
 if __name__ == "__main__":
