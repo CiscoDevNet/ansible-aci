@@ -468,7 +468,7 @@
     path: api/mo/uni/infra/lacpifp-port_channel_interface_policy.json
     method: post
     content:
-      { "lacpIfPol": { "attributes": { "annotation": "orchestrator:ansible", "descr": "test", "name": "port_channel_interface_policy", "prio": 32768 } } }
+      { "lacpIfPol": { "attributes": { "annotation": "orchestrator:ansible", "descr": null, "name": "port_channel_interface_policy", "prio": 32768 } } }
   check_mode: true
   register: cm_add_pc_inf_pol
 
@@ -494,19 +494,19 @@
     that:
       - cm_add_pc_inf_pol is changed
       - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.descr == "test"
+      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.descr == ""
       - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.name == "port_channel_interface_policy"
       - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.prio == "32768"
       - nm_add_pc_inf_pol is changed
       - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.descr == "test"
+      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.descr == ""
       - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-port_channel_interface_policy"
       - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.name == "port_channel_interface_policy"
       - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.prio == "32768"
       - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.rn == ""
       - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.status == "created"
       - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.descr == "test"
+      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.descr == ""
       - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.name == "port_channel_interface_policy"
       - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.prio == "32768"
       - nm_add_pc_inf_pol_again is not changed
@@ -514,7 +514,7 @@
       - nm_add_pc_inf_pol_again.proposed == nm_add_pc_inf_pol.proposed
       - rm_pc_inf_pol is changed
       - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.descr == "test"
+      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.descr == ""
       - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-port_channel_interface_policy"
       - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.name == "port_channel_interface_policy"
       - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.prio == "32768"
@@ -543,6 +543,7 @@
           - fvAp:
               attributes:
                 name: "ap1"
+                descr: ""
               children:
                 - fvAEPg:
                     attributes:
@@ -607,6 +608,7 @@
       - cm_add_tenant_json.proposed.fvTenant.attributes.name == "ansible_test_json"
       - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.annotation == "orchestrator:ansible"
       - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.name == "ap1"
+      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.descr == ""
       - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "orchestrator:ansible"
       - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.floodOnEncap == "disabled"
       - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.hasMcastSource == "no"

@@ -556,7 +556,9 @@ def process_rest_payload(payload, convert_values_to_str):
 
 
 def convert_payload_values_to_str(data):
-    if isinstance(data, dict):
+    if data in [None, ""]:
+        return ""
+    elif isinstance(data, dict):
         return {k: convert_payload_values_to_str(v) for k, v in data.items()}
     elif isinstance(data, list):
         return [convert_payload_values_to_str(item) for item in data]
