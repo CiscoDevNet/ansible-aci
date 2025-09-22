@@ -1,0 +1,222 @@
+# Test code for the ACI modules
+# Copyright: (c) 2025, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI APIC host, ACI username and ACI password
+  ansible.builtin.fail:
+    msg: 'Please define the following variables: aci_hostname, aci_username and aci_password.'
+  when: aci_hostname is not defined or aci_username is not defined or aci_password is not defined
+
+# SET VARS
+- name: Set vars
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: '{{ aci_hostname }}'
+      username: '{{ aci_username }}'
+      password: '{{ aci_password }}'
+      validate_certs: '{{ aci_validate_certs | default(false) }}'
+      use_ssl: '{{ aci_use_ssl | default(true) }}'
+      use_proxy: '{{ aci_use_proxy | default(true) }}'
+      output_level: '{{ aci_output_level | default("debug") }}'
+
+- name: Query system information
+  cisco.aci.aci_system:
+    <<: *aci_info
+    id: 1
+    state: query
+  register: version
+
+- name: Verify Cloud and Non-Cloud Sites in use.
+  ansible.builtin.include_tasks: ../../../../../../integration/targets/aci_cloud_provider/tasks/main.yml
+
+- name: Execute tasks only for ACI v6+ and non-cloud sites
+  when:
+  - version.current.0.topSystem.attributes.version is version('6', '>=')
+  - query_cloud.current == []  # This condition will execute only non-cloud sites
+  block:  # block specifies execution of tasks within, based on conditions
+
+  # SETUP ENVIRONMENT
+  
+  - name: Clean existing access switch configurations
+    cisco.aci.aci_switch_access_config: &clean_switch_access_config
+      <<: *aci_info
+      node: "{{ item }}"
+      state: absent
+    loop:
+      - 501
+      - 502
+
+  - name: Create the ansible access switch policy groups
+    cisco.aci.aci_access_switch_policy_group: &create_access_switch_policy_group
+      <<: *aci_info
+      switch_type: "{{ item.type }}"
+      name: "{{ item.name }}"
+      state: present
+    loop:
+      - {name: ansible_access_switch_leaf_pol_grp, type: leaf}
+      - {name: ansible_access_switch_leaf_pol_grp_2, type: leaf}
+      - {name: ansible_access_switch_spine_pol_grp, type: spine}
+
+  # CREATE
+
+  - name: Create Switch Access Group Config (check_mode)
+    cisco.aci.aci_switch_access_config: &create_switch_access_config
+      <<: *aci_info
+      node: 501
+      node_type: leaf
+      policy_group: ansible_access_switch_leaf_pol_grp
+    check_mode: true
+    register: cm_create_switch_access_config
+
+  - name: Create Switch Access Group Config
+    cisco.aci.aci_switch_access_config:
+      <<: *create_switch_access_config
+    register: nm_create_switch_access_config
+
+  - name: Create Switch Access Group Config again
+    cisco.aci.aci_switch_access_config:
+      <<: *create_switch_access_config
+    register: nm_create_switch_access_config_again
+
+  - name: Assert Switch Access Group Config creation
+    ansible.builtin.assert:
+      that:
+        - cm_create_switch_access_config is changed
+        - cm_create_switch_access_config.previous == []
+        - cm_create_switch_access_config.current == []
+        - cm_create_switch_access_config.proposed.infraNodeConfig.attributes.node == '501'
+        - cm_create_switch_access_config.proposed.infraNodeConfig.attributes.assocGrp == 'uni/infra/funcprof/accnodepgrp-ansible_access_switch_leaf_pol_grp'
+        - cm_create_switch_access_config.proposed.infraNodeConfig.attributes.annotation == 'orchestrator:ansible'
+        - nm_create_switch_access_config is changed
+        - nm_create_switch_access_config.previous == []
+        - nm_create_switch_access_config.current.0.infraNodeConfig.attributes.node == '501'
+        - nm_create_switch_access_config.current.0.infraNodeConfig.attributes.assocGrp == 'uni/infra/funcprof/accnodepgrp-ansible_access_switch_leaf_pol_grp'
+        - nm_create_switch_access_config.current.0.infraNodeConfig.attributes.annotation == 'orchestrator:ansible'
+        - nm_create_switch_access_config_again is not changed
+        - nm_create_switch_access_config_again.previous == nm_create_switch_access_config_again.current
+        - nm_create_switch_access_config_again.current == nm_create_switch_access_config.current
+
+  # UPDATE  
+
+  - name: Update Switch Access Group Config (check_mode)
+    cisco.aci.aci_switch_access_config: &update_switch_access_config
+      <<: *aci_info
+      node: 501
+      node_type: leaf
+      policy_group: ansible_access_switch_leaf_pol_grp_2
+    check_mode: true
+    register: cm_update_switch_access_config
+
+  - name: Update Switch Access Group Config
+    cisco.aci.aci_switch_access_config:
+      <<: *update_switch_access_config
+    register: nm_update_switch_access_config
+
+  - name: Update Switch Access Group Config again
+    cisco.aci.aci_switch_access_config:
+      <<: *update_switch_access_config
+    register: nm_update_switch_access_config_again
+
+  - name: Assert Switch Access Group Config update
+    ansible.builtin.assert:
+      that:
+        - cm_update_switch_access_config is changed
+        - cm_update_switch_access_config.previous == nm_create_switch_access_config.current
+        - cm_update_switch_access_config.current == cm_update_switch_access_config.previous
+        - cm_update_switch_access_config.proposed.infraNodeConfig.attributes.node == '501'
+        - cm_update_switch_access_config.proposed.infraNodeConfig.attributes.assocGrp == 'uni/infra/funcprof/accnodepgrp-ansible_access_switch_leaf_pol_grp_2'
+        - cm_update_switch_access_config.proposed.infraNodeConfig.attributes.annotation == 'orchestrator:ansible'
+        - nm_update_switch_access_config is changed
+        - nm_update_switch_access_config.previous == nm_create_switch_access_config.current
+        - nm_update_switch_access_config.current.0.infraNodeConfig.attributes.node == '501'
+        - nm_update_switch_access_config.current.0.infraNodeConfig.attributes.assocGrp == 'uni/infra/funcprof/accnodepgrp-ansible_access_switch_leaf_pol_grp_2'
+        - nm_update_switch_access_config.current.0.infraNodeConfig.attributes.annotation == 'orchestrator:ansible'
+        - nm_update_switch_access_config_again is not changed
+        - nm_update_switch_access_config_again.previous == nm_update_switch_access_config_again.current
+        - nm_update_switch_access_config_again.current == nm_update_switch_access_config.current
+
+  # QUERY
+
+  - name: Create another Switch Access Group Config
+    cisco.aci.aci_switch_access_config:
+      <<: *create_switch_access_config
+      node: 502
+      node_type: spine
+      policy_group: ansible_access_switch_spine_pol_grp
+  
+  - name: Query Switch Access Group Config
+    cisco.aci.aci_switch_access_config:
+      <<: *aci_info
+      node: 502
+      state: query
+    register: query_one
+
+  - name: Query all Switch Access Group Configs
+    cisco.aci.aci_switch_access_config:
+      <<: *aci_info
+      state: query
+    register: query_all
+
+  - name: Assert Switch Access Group Config query
+    ansible.builtin.assert:
+      that:
+        - query_one is not changed
+        - query_one.current | length == 1
+        - query_one.current.0.infraNodeConfig.attributes.node == '502'
+        - query_one.current.0.infraNodeConfig.attributes.assocGrp == 'uni/infra/funcprof/spaccnodepgrp-ansible_access_switch_spine_pol_grp'
+        - query_all is not changed
+        - query_all.current | length >= 2
+        - "'501' in query_all.current | map(attribute='infraNodeConfig.attributes.node') | list"
+        - "'502' in query_all.current | map(attribute='infraNodeConfig.attributes.node') | list"
+
+  # DELETE
+
+  - name: Delete Switch Access Group Config (check_mode)
+    cisco.aci.aci_switch_access_config: &delete_switch_access_config
+      <<: *update_switch_access_config
+      state: absent
+    register: cm_delete_switch_access_config
+    check_mode: true
+
+  - name: Delete Switch Access Group Config
+    cisco.aci.aci_switch_access_config:
+      <<: *delete_switch_access_config
+    register: nm_delete_switch_access_config
+
+  - name: Delete Switch Access Group Config again
+    cisco.aci.aci_switch_access_config:
+      <<: *delete_switch_access_config
+    register: nm_delete_switch_access_config_again
+  
+  - name: Assert Switch Access Group Config deletion
+    ansible.builtin.assert:
+      that:
+        - cm_delete_switch_access_config is changed
+        - cm_delete_switch_access_config.previous == nm_update_switch_access_config.current
+        - cm_delete_switch_access_config.previous == cm_delete_switch_access_config.current
+        - cm_delete_switch_access_config.proposed == {}
+        - nm_delete_switch_access_config is changed
+        - nm_delete_switch_access_config.previous == nm_update_switch_access_config.current
+        - nm_delete_switch_access_config.current == []
+        - nm_delete_switch_access_config_again is not changed
+        - nm_delete_switch_access_config_again.previous == []
+        - nm_delete_switch_access_config_again.current == []
+
+  # CLEAN ENVIRONMENT
+  
+  - name: Clean existing access switch configurations
+    cisco.aci.aci_switch_access_config:
+      <<: *clean_switch_access_config
+    loop:
+      - 501
+      - 502
+
+  - name: Create the ansible access switch policy groups
+    cisco.aci.aci_access_switch_policy_group:
+      <<: *create_access_switch_policy_group
+      state: absent
+    loop:
+      - {name: ansible_access_switch_leaf_pol_grp, type: leaf}
+      - {name: ansible_access_switch_leaf_pol_grp_2, type: leaf}
+      - {name: ansible_access_switch_spine_pol_grp, type: spine}
