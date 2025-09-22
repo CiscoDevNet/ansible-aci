@@ -207,8 +207,10 @@ RETURN = r"""
 
 from ansible_collections.cisco.aci.plugins.module_utils.switch_config import SwitchConfig
 
+
 def main():
-     SwitchConfig("infraNodeConfig").main()
+    SwitchConfig("infraNodeConfig").main()
+
 
 if __name__ == "__main__":
     main()

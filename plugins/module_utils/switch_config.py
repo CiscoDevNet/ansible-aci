@@ -1,8 +1,11 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2025, Samita Bhattacharjee (@samiib)
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import (
@@ -43,9 +46,7 @@ class SwitchConfig(object):
                     "{0}_policy_group".format(policy_type),
                 ],
             ),
-            state=dict(
-                type="str", default="present", choices=["absent", "present", "query"]
-            ),
+            state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         )
 
         module = AnsibleModule(
