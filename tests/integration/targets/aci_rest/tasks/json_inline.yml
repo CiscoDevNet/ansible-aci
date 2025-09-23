@@ -21,13 +21,7 @@
 # CLEAN ENVIRONMENT
 - name: Remove tenant
   cisco.aci.aci_rest: &tenant_absent
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni/tn-[ansible_test].json
     method: delete
 
@@ -39,13 +33,7 @@
 # ADD TENANT
 - name: Add tenant (check mode)
   cisco.aci.aci_rest: &tenant_present
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni.json
     method: post
     content:
@@ -61,13 +49,7 @@
 
 - name: Verify checkmode did not create tenant
   cisco.aci.aci_tenant:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     name: ansible_test
     state: query
   register: cm_verify_checkmode_tenant
@@ -98,13 +80,7 @@
 # CHANGE TENANT
 - name: Change description of tenant (normal mode)
   cisco.aci.aci_rest: &tenant_changed
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni.json
     method: post
     content:
@@ -141,13 +117,7 @@
 # QUERY ALL TENANTS
 - name: Query all tenants (normal mode)
   cisco.aci.aci_rest: &tenant_query_all
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni/tn-[ansible_test].json
     method: get
   register: nm_query_all_tenants
@@ -174,13 +144,7 @@
 # QUERY ALL TENANTS WITH PAGINATION
 - name: Query all tenants with pagination (normal mode)
   cisco.aci.aci_rest: &tenant_query_all_paginated
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/class/uni/fvTenant.json
     page_size: 10
     method: get
@@ -226,13 +190,7 @@
 # QUERY A TENANT
 - name: Query our tenant
   cisco.aci.aci_rest: &tenant_query
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni/tn-[ansible_test].json
     method: get
   register: nm_query_tenant
@@ -276,13 +234,7 @@
 # VERIFY ANNOTATION SUPPORT
 - name: Add tenant with annotation option
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni.json
     method: post
     annotation: test:inoption
@@ -299,13 +251,7 @@
 
 - name: Add tenant with annotation in content
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni.json
     method: post
     content:
@@ -322,13 +268,7 @@
 
 - name: Add tenant with annotation in content and option
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni.json
     method: post
     annotation: test:inoption
@@ -346,13 +286,7 @@
 
 - name: Add tag to tenant with annotation unsupported
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni/tn-ansible_test/tagKey-foo.json
     method: post
     annotation: test:inoption
@@ -371,13 +305,7 @@
 
 - name: Add tenant with children objects including annotation
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /api/mo/uni.json
     method: post
     annotation: test:inoption
@@ -433,13 +361,7 @@
 # Test to check the fix for disabling intersight connectivity issue: https://github.com/CiscoDevNet/ansible-aci/issues/685
 - name: Disable Intersight Connectivity
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     path: /connector/Systems.json
     method: post
     rsp_subtree_preserve: true
@@ -463,6 +385,8 @@
   register: rm_pc_inf_pol
 
 - name: Add Port Channel interface policy JSON with prio attribute int value (check_mode)
+  environment:
+    ACI_CONVERT_VALUES_TO_STR: "true"
   cisco.aci.aci_rest: &cm_add_pc_inf_pol_json
     <<: *aci_info
     path: api/mo/uni/infra/lacpifp-port_channel_interface_policy.json
@@ -473,11 +397,15 @@
   register: cm_add_pc_inf_pol
 
 - name: Add Port Channel interface policy JSON with prio attribute int value
+  environment:
+    ACI_CONVERT_VALUES_TO_STR: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_pc_inf_pol_json
   register: nm_add_pc_inf_pol
 
 - name: Add Port Channel interface policy JSON with prio attribute int value again
+  environment:
+    ACI_CONVERT_VALUES_TO_STR: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_pc_inf_pol_json
   register: nm_add_pc_inf_pol_again
@@ -528,6 +456,8 @@
     method: delete
 
 - name: Add tenant with nested child objects (check_mode)
+  environment:
+    ACI_CONVERT_VALUES_TO_STR: "true"
   cisco.aci.aci_rest: &cm_add_tenant_json
     <<: *aci_info
     path: api/mo/uni/tn-ansible_test_json.json
@@ -582,11 +512,15 @@
   register: cm_add_tenant_json
 
 - name: Add tenant with nested child objects
+  environment:
+    ACI_CONVERT_VALUES_TO_STR: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_tenant_json
   register: nm_add_tenant_json
 
 - name: Add tenant with nested child objects again
+  environment:
+    ACI_CONVERT_VALUES_TO_STR: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_tenant_json
   register: nm_add_tenant_json_again

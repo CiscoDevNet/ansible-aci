@@ -71,11 +71,10 @@ options:
     type: int
   convert_values_to_str:
     description:
+    - If this parameter is not specified in the task, the value of environment variable ACI_CONVERT_VALUES_TO_STR will be used instead.
     - This parameter enforces the conversion of integer and float values to strings in Ansible Core v2.19.0 and later, as well as Jinja2 v3.1.6 and later.
-    - This parameter defaults to O(convert_values_to_str=true) to maintain compatibility with Ansible Core versions earlier than 2.19.0.
-    - To disable this conversion, set O(convert_values_to_str=false).
+    - To disable this conversion, set O(convert_values_to_str=false) or unset the ACI_CONVERT_VALUES_TO_STR environment variable.
     type: bool
-    default: true
     aliases: [ convert_none_int_float_to_str, values_to_str ]
 extends_documentation_fragment:
 - cisco.aci.aci
@@ -314,7 +313,7 @@ try:
 except Exception:
     HAS_YAML = False
 
-from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     ACIModule,
     aci_argument_spec,
@@ -413,7 +412,11 @@ def main():
         page=dict(type="int"),
         # To support Ansible Core 2.19.0 and later, Jinja2 3.1.6 and later versions.
         # The convert_values_to_str parameter defaults to True to maintain compatibility with Ansible Core versions earlier than 2.19.0.
-        convert_values_to_str=dict(type="bool", default=True, aliases=["convert_none_int_float_to_str", "values_to_str"]),
+        convert_values_to_str=dict(
+            type="bool",
+            aliases=["convert_none_int_float_to_str", "values_to_str"],
+            fallback=(env_fallback, ["ACI_CONVERT_VALUES_TO_STR"]),
+        ),
     )
 
     module = AnsibleModule(
