@@ -399,6 +399,17 @@ def switch_config_spec(policy_type):
         ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
+def recursive_convert_none_int_float_to_str_in_dict_list(data):
+    if isinstance(data, (bool, str)):
+        return data
+    elif isinstance(data, (int, float)):
+        return str(data)
+    elif isinstance(data, dict):
+        return {k: recursive_convert_none_int_float_to_str_in_dict_list(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [recursive_convert_none_int_float_to_str_in_dict_list(item) for item in data]
+    elif data is None:
+        return ""
 
 
 class ACIModule(object):
