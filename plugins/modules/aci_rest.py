@@ -71,11 +71,12 @@ options:
     type: int
   convert_values_to_str:
     description:
-    - When O(convert_values_to_str=true), this attribute converts input object values to strings.
-    - This ensures compatibility with Jinja2 version 3.1.6 and above.
+    - This parameter enforces the conversion of integer and float values to strings in Ansible Core v2.19.0 and later, as well as Jinja2 v3.1.6 and later.
+    - This parameter defaults to O(convert_values_to_str=true) to maintain compatibility with Ansible Core versions earlier than 2.19.0.
     - To disable this conversion, set O(convert_values_to_str=false).
     type: bool
     default: true
+    aliases: [ convert_none_int_float_to_str, values_to_str ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -314,7 +315,12 @@ except Exception:
     HAS_YAML = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
+    recursive_convert_none_int_float_to_str_in_dict_list,
+)
 from ansible.module_utils._text import to_text
 from ansible_collections.cisco.aci.plugins.module_utils.annotation_unsupported import (
     ANNOTATION_UNSUPPORTED,
@@ -405,7 +411,9 @@ def main():
         rsp_subtree_preserve=dict(type="bool", default=False),
         page_size=dict(type="int"),
         page=dict(type="int"),
-        convert_values_to_str=dict(type="bool", default=True),  # To support Jinja2 3.1.6 and later versions.
+        # To support Ansible Core 2.19.0 and later, Jinja2 3.1.6 and later versions.
+        # The convert_values_to_str parameter defaults to True to maintain compatibility with Ansible Core versions earlier than 2.19.0.
+        convert_values_to_str=dict(type="bool", default=True, aliases=["convert_none_int_float_to_str", "values_to_str"]),
     )
 
     module = AnsibleModule(
@@ -460,13 +468,21 @@ def main():
         if content and isinstance(content, dict):
             # Validate inline YAML/JSON
             add_annotation(annotation, payload)
-            payload = json.dumps(process_rest_payload(payload, convert_values_to_str))
+            if convert_values_to_str:
+                payload = json.dumps(recursive_convert_none_int_float_to_str_in_dict_list(payload))
+            else:
+                payload = json.dumps(payload)
+
         elif payload and isinstance(payload, str) and HAS_YAML:
             try:
                 # Validate YAML/JSON string
                 payload = yaml.safe_load(payload)
                 add_annotation(annotation, payload)
-                payload = json.dumps(process_rest_payload(payload, convert_values_to_str))
+                if convert_values_to_str:
+                    payload = json.dumps(recursive_convert_none_int_float_to_str_in_dict_list(payload))
+                else:
+                    payload = json.dumps(payload)
+
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: {0}".format(to_text(e)), exception=to_text(e), payload=payload)
     elif rest_type == "xml" and HAS_LXML_ETREE:
@@ -544,28 +560,6 @@ def main():
 
     # Report success
     aci.exit_json(**aci.result)
-
-
-def process_rest_payload(payload, convert_values_to_str):
-    if convert_values_to_str:
-        if isinstance(payload, str):
-            payload = convert_payload_values_to_str(json.loads(payload))
-        else:
-            payload = convert_payload_values_to_str(payload)
-    return payload
-
-
-def convert_payload_values_to_str(data):
-    if data is None:
-        return ""
-    if isinstance(data, dict):
-        return {k: convert_payload_values_to_str(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [convert_payload_values_to_str(item) for item in data]
-    elif (isinstance(data, int) and not isinstance(data, bool)) or isinstance(data, float):
-        return str(data)
-    else:
-        return data
 
 
 if __name__ == "__main__":
