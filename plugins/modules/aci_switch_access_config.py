@@ -205,11 +205,60 @@ RETURN = r"""
      sample: https://10.11.12.13/api/mo/uni/tn-production.json
    """
 
-from ansible_collections.cisco.aci.plugins.module_utils.switch_config import SwitchConfig
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.aci.plugins.module_utils.aci import (
+    ACIModule,
+    switch_config_spec,
+)
+from ansible_collections.cisco.aci.plugins.module_utils.constants import (
+    SWITCH_CONFIG_FORMAT_MAP,
+)
 
 
 def main():
-    SwitchConfig("infraNodeConfig").main()
+    moClass = "infraNodeConfig"
+    module = AnsibleModule(
+        argument_spec=switch_config_spec(SWITCH_CONFIG_FORMAT_MAP[moClass]["type"]),
+        supports_check_mode=True,
+        required_if=[
+            ["state", "absent", ["node"]],
+            ["state", "present", ["node", "node_type", "policy_group"]],
+        ],
+    )
+
+    node = module.params.get("node")
+    node_type = module.params.get("node_type")
+    policy_group = module.params.get("policy_group")
+    state = module.params.get("state")
+
+    aci = ACIModule(module)
+    aci.construct_url(
+        root_class=dict(
+            aci_class=moClass,
+            target_filter=dict(node=node),
+            aci_rn=SWITCH_CONFIG_FORMAT_MAP[moClass]["rn"].format(node),
+        ),
+    )
+
+    aci.get_existing()
+
+    if state == "present":
+        config = dict(node=node)
+        if policy_group is not None:
+            config["assocGrp"] = SWITCH_CONFIG_FORMAT_MAP[moClass][node_type].format(policy_group)
+        aci.payload(
+            aci_class=moClass,
+            class_config=config,
+        )
+
+        aci.get_diff(aci_class=moClass)
+
+        aci.post_config()
+
+    elif state == "absent":
+        aci.delete_config()
+
+    aci.exit_json()
 
 
 if __name__ == "__main__":
