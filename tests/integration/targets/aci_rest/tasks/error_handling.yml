@@ -21,12 +21,8 @@
 # PROVOKE ERRORS
 - name: Error on name resolution
   cisco.aci.aci_rest:
+    <<: *aci_info
     host: foo.bar.cisco.com
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
     output_level: debug
     path: /api/mo/uni.json
     method: post
@@ -49,12 +45,7 @@
 
 - name: Error when required parameter is missing
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
+    <<: *aci_info
     output_level: debug
     method: post
     content:
@@ -76,12 +67,7 @@
 
 - name: Error when attributes are missing
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
+    <<: *aci_info
     output_level: debug
     path: /api/mo/uni/tn-ansible_test.json
     method: post
@@ -106,12 +92,7 @@
 
 - name: Error when input does not validate
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
+    <<: *aci_info
     output_level: debug
     path: /api/mo/uni.json
     method: post
@@ -138,12 +119,7 @@
 
 - name: Error when invalid attributes are used
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
+    <<: *aci_info
     output_level: debug
     path: /api/mo/uni.json
     method: post
@@ -170,12 +146,7 @@
 
 - name: Error on invalid object
   cisco.aci.aci_rest:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
+    <<: *aci_info
     output_level: debug
     path: /api/mo/uni.json
     method: post
@@ -203,13 +174,7 @@
 # Avoiding error: TypeError: must be str, not bytes
 - name: Add user certificate
   cisco.aci.aci_aaa_user_certificate:
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
-    password: "{{ aci_password }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
+    <<: *aci_info
     aaa_user: "{{ aci_username }}"
     name: admin
     certificate: "{{ lookup('file', 'pki/admin.crt') }}"
@@ -218,14 +183,9 @@
 
 - name: Create tenant
   cisco.aci.aci_rest: &tenant
-    host: "{{ aci_hostname }}"
-    username: "{{ aci_username }}"
+    <<: *aci_info
     certificate_name: admin
     private_key: "{{ lookup('file', 'pki/admin.key') }}"
-    validate_certs: "{{ aci_validate_certs | default(false) }}"
-    use_ssl: "{{ aci_use_ssl | default(true) }}"
-    use_proxy: "{{ aci_use_proxy | default(true) }}"
-    output_level: '{{ aci_output_level | default("info") }}'
     path: /api/mo/uni.xml
     method: post
     content: <fvTenant name="test_tenant_cert_auth"/>
@@ -388,7 +348,6 @@
                     prio: 220
                     rexmitIntvl: 15
                     xmitDelay: 16
-        convert_values_to_str: false
       register: nt_add_tenant_json
       ignore_errors: true
 
@@ -399,7 +358,6 @@
         method: post
         content:
           { "lacpIfPol": { "attributes": { "annotation": "orchestrator:ansible", "descr": "test", "name": "port_channel_interface_policy", "prio": 32768 } } }
-        convert_values_to_str: false
       register: nt_add_pc_inf_pol_json
       ignore_errors: true
 
@@ -423,7 +381,6 @@
               name: "port_channel_interface_policy"
               prio: 32768
               descr: "test"
-            convert_values_to_str: false
       register: nt_add_pc_inf_pol_yml
       ignore_errors: true
 
@@ -437,4 +394,4 @@
           - nt_add_pc_inf_pol_xml is not changed
           - "nt_add_pc_inf_pol_xml.msg is match ('Failed to parse provided XML payload: AttValue:')"
           - nt_add_pc_inf_pol_yml is not changed
-          - 'nt_add_pc_inf_pol_yml.msg == "APIC Error 400: incomplete node at line ''1''"'
+          - 'nt_add_pc_inf_pol_yml.msg == "APIC Error 120: unknown property value 2768, , name prio, class lacpIfPol [(Dn0)] Dn0=, "'
