@@ -387,9 +387,7 @@ def storm_control_policy_rate_spec():
 
 
 def switch_config_spec(policy_type):
-    argument_spec = aci_argument_spec()
-    argument_spec.update(aci_annotation_spec())
-    argument_spec.update(
+    return dict(
         node_type=dict(type="str", aliases=["type", "switch_type"], choices=["leaf", "spine"]),
         node=dict(type="int", aliases=["node_id"]),
         policy_group=dict(
@@ -401,7 +399,6 @@ def switch_config_spec(policy_type):
         ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
-    return argument_spec
 
 
 class ACIModule(object):

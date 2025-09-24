@@ -21,6 +21,7 @@ version_added: "2.13.0"
 short_description: Manage Switch Fabric Policy Configuration of Leaf and Spine nodes (fabric:NodeConfig).
 description:
 - Manage Switch Fabric Policy Configuration of Leaf and Spine nodes (fabric:NodeConfig) on Cisco ACI fabrics.
+- This module is only available for APIC version 6.0 and above.
 options:
   node_type:
     description:
@@ -37,6 +38,7 @@ options:
   policy_group:
     description:
     - The name of the Leaf/Spine Fabric Policy Group to associate with the node.
+    - The Fabric Policy Group must exist for the settings to be applied.
     type: str
     aliases: [ fabric_policy_group, fabric_policy ]
   state:
@@ -208,6 +210,8 @@ RETURN = r"""
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     ACIModule,
+    aci_argument_spec,
+    aci_annotation_spec,
     switch_config_spec,
 )
 from ansible_collections.cisco.aci.plugins.module_utils.constants import (
@@ -217,8 +221,11 @@ from ansible_collections.cisco.aci.plugins.module_utils.constants import (
 
 def main():
     moClass = "fabricNodeConfig"
+    argument_spec = aci_argument_spec()
+    argument_spec.update(aci_annotation_spec())
+    argument_spec.update(switch_config_spec(SWITCH_CONFIG_FORMAT_MAP[moClass]["type"]))
     module = AnsibleModule(
-        argument_spec=switch_config_spec(SWITCH_CONFIG_FORMAT_MAP[moClass]["type"]),
+        argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["node"]],
@@ -243,12 +250,12 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        config = dict(node=node)
-        if policy_group is not None:
-            config["assocGrp"] = SWITCH_CONFIG_FORMAT_MAP[moClass][node_type].format(policy_group)
         aci.payload(
             aci_class=moClass,
-            class_config=config,
+            class_config=dict(
+                node=node,
+                assocGrp=SWITCH_CONFIG_FORMAT_MAP[moClass][node_type].format(policy_group),
+            ),
         )
 
         aci.get_diff(aci_class=moClass)
