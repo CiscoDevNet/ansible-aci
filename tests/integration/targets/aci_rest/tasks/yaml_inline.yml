@@ -48,10 +48,10 @@
 - name: Verify checkmode POST operation
   ansible.builtin.assert:
     that:
-      - cm_add_tenant is changed
-      - cm_add_tenant.proposed.fvTenant.attributes.name == "ansible_test"
-      - cm_add_tenant.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
-      - cm_verify_checkmode_tenant.current == []
+    - cm_add_tenant is changed
+    - cm_add_tenant.proposed.fvTenant.attributes.name == "ansible_test"
+    - cm_add_tenant.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
+    - cm_verify_checkmode_tenant.current == []
 
 - name: Add tenant (normal mode)
   cisco.aci.aci_rest: *tenant_present
@@ -64,8 +64,8 @@
 - name: Verify add_tenant
   ansible.builtin.assert:
     that:
-      - nm_add_tenant is changed
-      - nm_add_tenant_again is not changed
+    - nm_add_tenant is changed
+    - nm_add_tenant_again is not changed
 
 # CHANGE TENANT
 - name: Change description of tenant (normal mode)
@@ -87,9 +87,9 @@
 - name: Verify add_tenant_descr
   ansible.builtin.assert:
     that:
-      - nm_add_tenant_descr is changed
-      - nm_add_tenant.imdata.0.fvTenant.attributes.annotation == "orchestrator:ansible"
-      - nm_add_tenant_descr_again is not changed
+    - nm_add_tenant_descr is changed
+    - nm_add_tenant.imdata.0.fvTenant.attributes.annotation == "orchestrator:ansible"
+    - nm_add_tenant_descr_again is not changed
 
 # ADD TENANT AGAIN
 - name: Add tenant again with no description (normal mode)
@@ -99,7 +99,7 @@
 - name: Verify add_tenant_again_no_descr
   ansible.builtin.assert:
     that:
-      - nm_add_tenant_again_no_descr is not changed
+    - nm_add_tenant_again_no_descr is not changed
 
 # QUERY ALL TENANTS
 - name: Query all tenants (normal mode)
@@ -112,7 +112,7 @@
 - name: Verify query_all_tenants
   ansible.builtin.assert:
     that:
-      - nm_query_all_tenants is not changed
+    - nm_query_all_tenants is not changed
 
 # QUERY A TENANT
 - name: Query our tenant
@@ -125,7 +125,7 @@
 - name: Verify query_tenant
   ansible.builtin.assert:
     that:
-      - nm_query_tenant is not changed
+    - nm_query_tenant is not changed
 
 # REMOVE TENANT
 - name: Remove tenant (normal mode)
@@ -139,8 +139,8 @@
 - name: Verify remove_tenant
   ansible.builtin.assert:
     that:
-      - nm_remove_tenant is changed
-      - nm_remove_tenant_again is not changed
+    - nm_remove_tenant is changed
+    - nm_remove_tenant_again is not changed
 
 # QUERY NON-EXISTING TENANT
 - name: Query non-existing tenant (normal mode)
@@ -150,7 +150,7 @@
 - name: Verify query_non_tenant
   ansible.builtin.assert:
     that:
-      - nm_query_non_tenant is not changed
+    - nm_query_non_tenant is not changed
 
 # VERIFY ANNOTATION SUPPORT
 - name: Add tenant with annotation option
@@ -236,92 +236,92 @@
 - name: Verify annotation support
   assert:
     that:
-      - nm_add_tenant_annotation_option.imdata.0.fvTenant.attributes.annotation == "test:inoption"
-      - nm_add_tenant_annotation_content.imdata.0.fvTenant.attributes.annotation == "test:incontent"
-      - nm_add_tenant_annotation_option_content.imdata.0.fvTenant.attributes.annotation == "test:optionincontent"
-      - nm_add_tag_no_annotation.imdata.0.tagTag.attributes.annotation is undefined
-      - nm_add_tenant_annotation_children.imdata.0.fvTenant.attributes.annotation == "test:inoption"
-      - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "test:inoption"
-      - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "test:inchild"
-      - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.2.fvCtx.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_option.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_content.imdata.0.fvTenant.attributes.annotation == "test:incontent"
+    - nm_add_tenant_annotation_option_content.imdata.0.fvTenant.attributes.annotation == "test:optionincontent"
+    - nm_add_tag_no_annotation.imdata.0.tagTag.attributes.annotation is undefined
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "test:inchild"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.2.fvCtx.attributes.annotation == "test:inoption"
 
 # Test to check the ansible-core >= 2.19
 - name: Ensure Port Channel interface policy does not exists
   cisco.aci.aci_rest:
     <<: *aci_info
-    path: api/mo/uni/infra/lacpifp-port_channel_interface_policy.json
+    path: api/mo/uni/infra/lacpifp-link_aggregation_control_protocol.json
     method: delete
-  register: rm_pc_inf_pol
+  register: rm_link_aggregation_control_protocol
 
 - name: Add Port Channel interface policy YML with prio attribute int value (check_mode)
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
-  cisco.aci.aci_rest: &cm_add_pc_inf_pol_yml
+    ACI_PRIMITIVES_TO_STRING: "true"
+  cisco.aci.aci_rest: &cm_add_link_aggregation_control_protocol_yml
     <<: *aci_info
-    path: api/mo/uni/infra/lacpifp-port_channel_interface_policy.json
+    path: api/mo/uni/infra/lacpifp-link_aggregation_control_protocol.json
     method: post
     content:
       lacpIfPol:
         attributes:
-          name: "port_channel_interface_policy"
+          name: "link_aggregation_control_protocol"
           prio: 32768
           descr: "test"
   check_mode: true
-  register: cm_add_pc_inf_pol
+  register: cm_add_link_aggregation_control_protocol
 
 - name: Add Port Channel interface policy YML with prio attribute int value
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
+    ACI_PRIMITIVES_TO_STRING: "true"
   cisco.aci.aci_rest:
-    <<: *cm_add_pc_inf_pol_yml
-  register: nm_add_pc_inf_pol
+    <<: *cm_add_link_aggregation_control_protocol_yml
+  register: nm_add_link_aggregation_control_protocol
 
 - name: Add Port Channel interface policy YML with prio attribute int value again
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
+    ACI_PRIMITIVES_TO_STRING: "true"
   cisco.aci.aci_rest:
-    <<: *cm_add_pc_inf_pol_yml
-  register: nm_add_pc_inf_pol_again
+    <<: *cm_add_link_aggregation_control_protocol_yml
+  register: nm_add_link_aggregation_control_protocol_again
 
 - name: Delete Port Channel interface policy
   cisco.aci.aci_rest:
     <<: *aci_info
-    path: api/mo/uni/infra/lacpifp-port_channel_interface_policy.json
+    path: api/mo/uni/infra/lacpifp-link_aggregation_control_protocol.json
     method: delete
-  register: rm_pc_inf_pol
+  register: rm_link_aggregation_control_protocol
 
 - name: Assertion check for add Port Channel interface policy YML with prio attribute int value
   ansible.builtin.assert:
     that:
-      - cm_add_pc_inf_pol is changed
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.descr == "test"
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.prio == "32768"
-      - nm_add_pc_inf_pol is changed
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.descr == "test"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-port_channel_interface_policy"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.prio == "32768"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.rn == ""
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.status == "created"
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.descr == "test"
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.prio == "32768"
-      - nm_add_pc_inf_pol_again is not changed
-      - nm_add_pc_inf_pol_again.imdata == []
-      - nm_add_pc_inf_pol_again.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - nm_add_pc_inf_pol_again.proposed.lacpIfPol.attributes.descr == "test"
-      - nm_add_pc_inf_pol_again.proposed.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - nm_add_pc_inf_pol_again.proposed.lacpIfPol.attributes.prio == "32768"
-      - nm_add_pc_inf_pol_again.proposed == nm_add_pc_inf_pol.proposed == cm_add_pc_inf_pol.proposed
-      - rm_pc_inf_pol is changed
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.descr == "test"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-port_channel_interface_policy"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.prio == "32768"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.rn == ""
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.status == "deleted"
+    - cm_add_link_aggregation_control_protocol is changed
+    - cm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - cm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.descr == "test"
+    - cm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - cm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.prio == "32768"
+    - nm_add_link_aggregation_control_protocol is changed
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.descr == "test"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-link_aggregation_control_protocol"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.prio == "32768"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.rn == ""
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.status == "created"
+    - nm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.descr == "test"
+    - nm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - nm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.prio == "32768"
+    - nm_add_link_aggregation_control_protocol_again is not changed
+    - nm_add_link_aggregation_control_protocol_again.imdata == []
+    - nm_add_link_aggregation_control_protocol_again.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_link_aggregation_control_protocol_again.proposed.lacpIfPol.attributes.descr == "test"
+    - nm_add_link_aggregation_control_protocol_again.proposed.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - nm_add_link_aggregation_control_protocol_again.proposed.lacpIfPol.attributes.prio == "32768"
+    - nm_add_link_aggregation_control_protocol_again.proposed == nm_add_link_aggregation_control_protocol.proposed == cm_add_link_aggregation_control_protocol.proposed
+    - rm_link_aggregation_control_protocol is changed
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.descr == "test"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-link_aggregation_control_protocol"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.prio == "32768"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.rn == ""
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.status == "deleted"
