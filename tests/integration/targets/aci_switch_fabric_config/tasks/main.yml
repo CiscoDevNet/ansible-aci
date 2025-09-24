@@ -203,6 +203,7 @@
         - nm_delete_switch_fabric_config_again.previous == []
         - nm_delete_switch_fabric_config_again.current == []
 
+  always:
   # CLEAN ENVIRONMENT
   
   - name: Clean existing fabric switch configurations
