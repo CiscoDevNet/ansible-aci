@@ -203,8 +203,8 @@
         - nm_delete_switch_access_config_again.previous == []
         - nm_delete_switch_access_config_again.current == []
 
+  always:
   # CLEAN ENVIRONMENT
-  
   - name: Clean existing access switch configurations
     cisco.aci.aci_switch_access_config:
       <<: *clean_switch_access_config
