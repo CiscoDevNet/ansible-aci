@@ -57,10 +57,10 @@
 - name: Verify checkmode POST operation
   ansible.builtin.assert:
     that:
-      - cm_add_tenant is changed
-      - cm_add_tenant.proposed.fvTenant.attributes.name == "ansible_test"
-      - cm_add_tenant.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
-      - cm_verify_checkmode_tenant.current == []
+    - cm_add_tenant is changed
+    - cm_add_tenant.proposed.fvTenant.attributes.name == "ansible_test"
+    - cm_add_tenant.proposed.fvTenant.attributes.annotation == "orchestrator:ansible"
+    - cm_verify_checkmode_tenant.current == []
 
 - name: Add tenant (normal mode)
   cisco.aci.aci_rest: *tenant_present
@@ -73,9 +73,9 @@
 - name: Verify add_tenant
   ansible.builtin.assert:
     that:
-      - nm_add_tenant is changed
-      - nm_add_tenant.imdata.0.fvTenant.attributes.annotation == "orchestrator:ansible"
-      - nm_add_tenant_again is not changed
+    - nm_add_tenant is changed
+    - nm_add_tenant.imdata.0.fvTenant.attributes.annotation == "orchestrator:ansible"
+    - nm_add_tenant_again is not changed
 
 # CHANGE TENANT
 - name: Change description of tenant (normal mode)
@@ -101,8 +101,8 @@
 - name: Verify add_tenant_descr
   ansible.builtin.assert:
     that:
-      - nm_add_tenant_descr is changed
-      - nm_add_tenant_descr_again is not changed
+    - nm_add_tenant_descr is changed
+    - nm_add_tenant_descr_again is not changed
 
 # ADD TENANT AGAIN
 - name: Add tenant again with no description (normal mode)
@@ -112,7 +112,7 @@
 - name: Verify add_tenant_again_no_descr
   ansible.builtin.assert:
     that:
-      - nm_add_tenant_again_no_descr is not changed
+    - nm_add_tenant_again_no_descr is not changed
 
 # QUERY ALL TENANTS
 - name: Query all tenants (normal mode)
@@ -125,7 +125,7 @@
 - name: Verify query_all_tenants
   ansible.builtin.assert:
     that:
-      - nm_query_all_tenants is not changed
+    - nm_query_all_tenants is not changed
 
 # ADD TENANT 2
 - name: Add tenant 2 (normal mode)
@@ -172,20 +172,20 @@
 - name: Verify query_all_tenants_paginated
   ansible.builtin.assert:
     that:
-      - nm_query_all_tenants_paginated is not changed
-      - nm_query_all_tenants_paginated_1_0 is not changed
-      - nm_query_all_tenants_paginated_1_1 is not changed
-      - nm_query_all_tenants_paginated_2_0 is not changed
+    - nm_query_all_tenants_paginated is not changed
+    - nm_query_all_tenants_paginated_1_0 is not changed
+    - nm_query_all_tenants_paginated_1_1 is not changed
+    - nm_query_all_tenants_paginated_2_0 is not changed
 
 - name: Verify pagination works as expected
   ansible.builtin.assert:
     that:
-      - nm_query_all_tenants_paginated is not changed
-      - nm_query_all_tenants_paginated_1_0.imdata | length == 1
-      - nm_query_all_tenants_paginated_1_1.imdata | length == 1
-      - nm_query_all_tenants_paginated_2_0.imdata | length == 2
-      - nm_query_all_tenants_paginated_1_0.imdata.0.fvTenant.attributes.name == nm_query_all_tenants_paginated_2_0.imdata.0.fvTenant.attributes.name
-      - nm_query_all_tenants_paginated_1_1.imdata.0.fvTenant.attributes.name == nm_query_all_tenants_paginated_2_0.imdata.1.fvTenant.attributes.name
+    - nm_query_all_tenants_paginated is not changed
+    - nm_query_all_tenants_paginated_1_0.imdata | length == 1
+    - nm_query_all_tenants_paginated_1_1.imdata | length == 1
+    - nm_query_all_tenants_paginated_2_0.imdata | length == 2
+    - nm_query_all_tenants_paginated_1_0.imdata.0.fvTenant.attributes.name == nm_query_all_tenants_paginated_2_0.imdata.0.fvTenant.attributes.name
+    - nm_query_all_tenants_paginated_1_1.imdata.0.fvTenant.attributes.name == nm_query_all_tenants_paginated_2_0.imdata.1.fvTenant.attributes.name
 
 # QUERY A TENANT
 - name: Query our tenant
@@ -198,7 +198,7 @@
 - name: Verify query_tenant
   ansible.builtin.assert:
     that:
-      - nm_query_tenant is not changed
+    - nm_query_tenant is not changed
 
 # REMOVE TENANT
 - name: Remove tenant (normal mode)
@@ -218,8 +218,8 @@
 - name: Verify remove_tenant
   ansible.builtin.assert:
     that:
-      - nm_remove_tenant is changed
-      - nm_remove_tenant_again is not changed
+    - nm_remove_tenant is changed
+    - nm_remove_tenant_again is not changed
 
 # QUERY NON-EXISTING TENANT
 - name: Query non-existing tenant (normal mode)
@@ -229,7 +229,7 @@
 - name: Verify query_non_tenant
   ansible.builtin.assert:
     that:
-      - nm_query_non_tenant is not changed
+    - nm_query_non_tenant is not changed
 
 # VERIFY ANNOTATION SUPPORT
 - name: Add tenant with annotation option
@@ -349,14 +349,14 @@
 - name: Verify annotation support
   assert:
     that:
-      - nm_add_tenant_annotation_option.imdata.0.fvTenant.attributes.annotation == "test:inoption"
-      - nm_add_tenant_annotation_content.imdata.0.fvTenant.attributes.annotation == "test:incontent"
-      - nm_add_tenant_annotation_option_content.imdata.0.fvTenant.attributes.annotation == "test:optionincontent"
-      - nm_add_tag_no_annotation.imdata.0.tagTag.attributes.annotation is undefined
-      - nm_add_tenant_annotation_children.imdata.0.fvTenant.attributes.annotation == "test:inoption"
-      - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "test:inoption"
-      - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "test:inchild"
-      - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.2.fvCtx.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_option.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_content.imdata.0.fvTenant.attributes.annotation == "test:incontent"
+    - nm_add_tenant_annotation_option_content.imdata.0.fvTenant.attributes.annotation == "test:optionincontent"
+    - nm_add_tag_no_annotation.imdata.0.tagTag.attributes.annotation is undefined
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "test:inoption"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "test:inchild"
+    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.2.fvCtx.attributes.annotation == "test:inoption"
 
 # Test to check the fix for disabling intersight connectivity issue: https://github.com/CiscoDevNet/ansible-aci/issues/685
 - name: Disable Intersight Connectivity
@@ -374,80 +374,89 @@
 - name: Verify Intersight Connectivity is disabled
   assert:
     that:
-      - disable_intersight_connectivity.imdata.0.AdminState == false
+    - disable_intersight_connectivity.imdata.0.AdminState == false
 
 # Test to check the ansible-core >= 2.19
 - name: Ensure Port Channel interface policy does not exists
   cisco.aci.aci_rest:
     <<: *aci_info
-    path: api/mo/uni/infra/lacpifp-port_channel_interface_policy.json
+    path: api/mo/uni/infra/lacpifp-link_aggregation_control_protocol.json
     method: delete
-  register: rm_pc_inf_pol
+  register: rm_link_aggregation_control_protocol
 
 - name: Add Port Channel interface policy JSON with prio attribute int value (check_mode)
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
-  cisco.aci.aci_rest: &cm_add_pc_inf_pol_json
+    ACI_PRIMITIVES_TO_STRING: "true"
+  cisco.aci.aci_rest: &cm_add_link_aggregation_control_protocol_json
     <<: *aci_info
-    path: api/mo/uni/infra/lacpifp-port_channel_interface_policy.json
+    path: api/mo/uni/infra/lacpifp-link_aggregation_control_protocol.json
     method: post
     content:
-      { "lacpIfPol": { "attributes": { "annotation": "orchestrator:ansible", "descr": null, "name": "port_channel_interface_policy", "prio": 32768 } } }
+      {
+          "lacpIfPol": {
+              "attributes": {
+                  "annotation": "orchestrator:ansible",
+                  "descr": null,
+                  "name": "link_aggregation_control_protocol",
+                  "prio": 32768
+              }
+          }
+      }
   check_mode: true
-  register: cm_add_pc_inf_pol
+  register: cm_add_link_aggregation_control_protocol
 
 - name: Add Port Channel interface policy JSON with prio attribute int value
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
+    ACI_PRIMITIVES_TO_STRING: "true"
   cisco.aci.aci_rest:
-    <<: *cm_add_pc_inf_pol_json
-  register: nm_add_pc_inf_pol
+    <<: *cm_add_link_aggregation_control_protocol_json
+  register: nm_add_link_aggregation_control_protocol
 
 - name: Add Port Channel interface policy JSON with prio attribute int value again
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
+    ACI_PRIMITIVES_TO_STRING: "true"
   cisco.aci.aci_rest:
-    <<: *cm_add_pc_inf_pol_json
-  register: nm_add_pc_inf_pol_again
+    <<: *cm_add_link_aggregation_control_protocol_json
+  register: nm_add_link_aggregation_control_protocol_again
 
 - name: Delete Port Channel interface policy
   cisco.aci.aci_rest:
     <<: *aci_info
-    path: api/mo/uni/infra/lacpifp-port_channel_interface_policy.json
+    path: api/mo/uni/infra/lacpifp-link_aggregation_control_protocol.json
     method: delete
-  register: rm_pc_inf_pol
+  register: rm_link_aggregation_control_protocol
 
 - name: Assertion check for add Port Channel interface policy JSON with prio attribute int value
   ansible.builtin.assert:
     that:
-      - cm_add_pc_inf_pol is changed
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.descr == ""
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - cm_add_pc_inf_pol.proposed.lacpIfPol.attributes.prio == "32768"
-      - nm_add_pc_inf_pol is changed
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.descr == ""
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-port_channel_interface_policy"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.prio == "32768"
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.rn == ""
-      - nm_add_pc_inf_pol.imdata.0.lacpIfPol.attributes.status == "created"
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.descr == ""
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - nm_add_pc_inf_pol.proposed.lacpIfPol.attributes.prio == "32768"
-      - nm_add_pc_inf_pol_again is not changed
-      - nm_add_pc_inf_pol_again.imdata == []
-      - nm_add_pc_inf_pol_again.proposed == nm_add_pc_inf_pol.proposed
-      - rm_pc_inf_pol is changed
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.descr == ""
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-port_channel_interface_policy"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.name == "port_channel_interface_policy"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.prio == "32768"
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.rn == ""
-      - rm_pc_inf_pol.imdata.0.lacpIfPol.attributes.status == "deleted"
+    - cm_add_link_aggregation_control_protocol is changed
+    - cm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - cm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.descr == ""
+    - cm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - cm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.prio == "32768"
+    - nm_add_link_aggregation_control_protocol is changed
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.descr == ""
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-link_aggregation_control_protocol"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.prio == "32768"
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.rn == ""
+    - nm_add_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.status == "created"
+    - nm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.descr == ""
+    - nm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - nm_add_link_aggregation_control_protocol.proposed.lacpIfPol.attributes.prio == "32768"
+    - nm_add_link_aggregation_control_protocol_again is not changed
+    - nm_add_link_aggregation_control_protocol_again.imdata == []
+    - nm_add_link_aggregation_control_protocol_again.proposed == nm_add_link_aggregation_control_protocol.proposed
+    - rm_link_aggregation_control_protocol is changed
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.annotation == "orchestrator:ansible"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.descr == ""
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.dn == "uni/infra/lacpifp-link_aggregation_control_protocol"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.name == "link_aggregation_control_protocol"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.prio == "32768"
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.rn == ""
+    - rm_link_aggregation_control_protocol.imdata.0.lacpIfPol.attributes.status == "deleted"
 
 - name: Ensure ansible_test_json tenant does not exists
   cisco.aci.aci_rest:
@@ -457,7 +466,7 @@
 
 - name: Add tenant with nested child objects (check_mode)
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
+    ACI_PRIMITIVES_TO_STRING: "true"
   cisco.aci.aci_rest: &cm_add_tenant_json
     <<: *aci_info
     path: api/mo/uni/tn-ansible_test_json.json
@@ -513,14 +522,14 @@
 
 - name: Add tenant with nested child objects
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
+    ACI_PRIMITIVES_TO_STRING: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_tenant_json
   register: nm_add_tenant_json
 
 - name: Add tenant with nested child objects again
   environment:
-    ACI_CONVERT_VALUES_TO_STR: "true"
+    ACI_PRIMITIVES_TO_STRING: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_tenant_json
   register: nm_add_tenant_json_again
@@ -535,106 +544,106 @@
 - name: Assertion check for add tenant with nested child objects
   ansible.builtin.assert:
     that:
-      - cm_add_tenant_json is changed
-      - cm_add_tenant_json.proposed.fvTenant.attributes.annotation == "test:inoption"
-      - cm_add_tenant_json.proposed.fvTenant.attributes.descr == "Ansible test tenant"
-      - cm_add_tenant_json.proposed.fvTenant.attributes.dn == "uni/tn-ansible_test_json"
-      - cm_add_tenant_json.proposed.fvTenant.attributes.name == "ansible_test_json"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.annotation == "orchestrator:ansible"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.name == "ap1"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.descr == ""
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "orchestrator:ansible"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.floodOnEncap == "disabled"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.hasMcastSource == "no"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.isAttrBasedEPg == "yes"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.matchT == "AtleastOne"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.name == "usge_epg"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.pcEnfPref == "unenforced"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.prefGrMemb == "exclude"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.prio == "level3"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.shutdown == "no"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.annotation == "orchestrator:ansible"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.match == "any"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.name == "default"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.prec == "100"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.scope == "scope-bd"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.1.fvRsBd.attributes.annotation == "orchestrator:ansible"
-      - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.1.fvRsBd.attributes.tnFvBDName == "default"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.annotation == "orchestrator:ansible"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.cost == "11"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.ctrl == "mtu-ignore"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.deadIntvl == "12"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.helloIntvl == "13"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.name == "ansible_ospf"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.nwT == "bcast"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.pfxSuppress == "disable"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.prio == "220"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.rexmitIntvl == "15"
-      - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.xmitDelay == "16"
-      - nm_add_tenant_json is changed
-      - nm_add_tenant_json.imdata.0.fvTenant.attributes.annotation == "test:inoption"
-      - nm_add_tenant_json.imdata.0.fvTenant.attributes.descr == "Ansible test tenant"
-      - nm_add_tenant_json.imdata.0.fvTenant.attributes.dn == "uni/tn-ansible_test_json"
-      - nm_add_tenant_json.imdata.0.fvTenant.attributes.name == "ansible_test_json"
-      - nm_add_tenant_json.imdata.0.fvTenant.attributes.rn == ""
-      - nm_add_tenant_json.imdata.0.fvTenant.attributes.status == "created"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "orchestrator:ansible"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.descr == ""
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.name == "ap1"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.prio == "unspecified"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.rn == "ap-ap1"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.status == "created"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "orchestrator:ansible"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.configIssues == ""
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.configSt == "not-applied"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.descr == ""
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.exceptionTag == ""
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.floodOnEncap == "disabled"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.fwdCtrl == ""
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.hasMcastSource == "no"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.isAttrBasedEPg == "yes"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.isSharedSrvMsiteEPg == "no"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.matchT == "AtleastOne"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.name == "usge_epg"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.pcEnfPref == "unenforced"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.pcTag == "any"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.pcTagAllocSrc == "idmanager"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.prefGrMemb == "exclude"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.prio == "level3"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.rn == "epg-usge_epg"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.scope == "0"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.shutdown == "no"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.status == "created"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.triggerSt == "not_triggerable"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.txId == "0"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.annotation == "orchestrator:ansible"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.name == "default"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.prec == "100"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.rn == "crtrn"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.1.fvRsBd.attributes.annotation == "orchestrator:ansible"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.1.fvRsBd.attributes.tnFvBDName == "default"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.annotation == "orchestrator:ansible"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.cost == "11"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.ctrl == "mtu-ignore"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.deadIntvl == "12"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.descr == ""
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.helloIntvl == "13"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.name == "ansible_ospf"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.nwT == "bcast"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.pfxSuppress == "disable"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.prio == "220"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.rexmitIntvl == "15"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.rn == "ospfIfPol-ansible_ospf"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.status == "created"
-      - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.xmitDelay == "16"
-      - cm_add_tenant_json.proposed == nm_add_tenant_json.proposed == nm_add_tenant_json_again.proposed
-      - nm_add_tenant_json_again is not changed
-      - nm_add_tenant_json_again.imdata == []
-      - nm_add_tenant_json.proposed == nm_add_tenant_json_again.proposed
-      - rm_tenant_json is changed
-      - rm_tenant_json.imdata.0.fvTenant.attributes.annotation == "test:inoption"
-      - rm_tenant_json.imdata.0.fvTenant.attributes.descr == "Ansible test tenant"
-      - rm_tenant_json.imdata.0.fvTenant.attributes.dn == "uni/tn-ansible_test_json"
-      - rm_tenant_json.imdata.0.fvTenant.attributes.name == "ansible_test_json"
-      - rm_tenant_json.imdata.0.fvTenant.attributes.rn == ""
-      - rm_tenant_json.imdata.0.fvTenant.attributes.status == "deleted"
+    - cm_add_tenant_json is changed
+    - cm_add_tenant_json.proposed.fvTenant.attributes.annotation == "test:inoption"
+    - cm_add_tenant_json.proposed.fvTenant.attributes.descr == "Ansible test tenant"
+    - cm_add_tenant_json.proposed.fvTenant.attributes.dn == "uni/tn-ansible_test_json"
+    - cm_add_tenant_json.proposed.fvTenant.attributes.name == "ansible_test_json"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.annotation == "orchestrator:ansible"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.name == "ap1"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.attributes.descr == ""
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "orchestrator:ansible"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.floodOnEncap == "disabled"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.hasMcastSource == "no"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.isAttrBasedEPg == "yes"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.matchT == "AtleastOne"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.name == "usge_epg"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.pcEnfPref == "unenforced"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.prefGrMemb == "exclude"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.prio == "level3"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.shutdown == "no"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.annotation == "orchestrator:ansible"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.match == "any"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.name == "default"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.prec == "100"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.scope == "scope-bd"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.1.fvRsBd.attributes.annotation == "orchestrator:ansible"
+    - cm_add_tenant_json.proposed.fvTenant.children.0.fvAp.children.0.fvAEPg.children.1.fvRsBd.attributes.tnFvBDName == "default"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.cost == "11"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.ctrl == "mtu-ignore"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.deadIntvl == "12"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.helloIntvl == "13"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.name == "ansible_ospf"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.nwT == "bcast"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.pfxSuppress == "disable"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.prio == "220"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.rexmitIntvl == "15"
+    - cm_add_tenant_json.proposed.fvTenant.children.1.ospfIfPol.attributes.xmitDelay == "16"
+    - nm_add_tenant_json is changed
+    - nm_add_tenant_json.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - nm_add_tenant_json.imdata.0.fvTenant.attributes.descr == "Ansible test tenant"
+    - nm_add_tenant_json.imdata.0.fvTenant.attributes.dn == "uni/tn-ansible_test_json"
+    - nm_add_tenant_json.imdata.0.fvTenant.attributes.name == "ansible_test_json"
+    - nm_add_tenant_json.imdata.0.fvTenant.attributes.rn == ""
+    - nm_add_tenant_json.imdata.0.fvTenant.attributes.status == "created"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "orchestrator:ansible"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.descr == ""
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.name == "ap1"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.prio == "unspecified"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.rn == "ap-ap1"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.attributes.status == "created"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "orchestrator:ansible"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.configIssues == ""
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.configSt == "not-applied"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.descr == ""
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.exceptionTag == ""
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.floodOnEncap == "disabled"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.fwdCtrl == ""
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.hasMcastSource == "no"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.isAttrBasedEPg == "yes"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.isSharedSrvMsiteEPg == "no"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.matchT == "AtleastOne"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.name == "usge_epg"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.pcEnfPref == "unenforced"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.pcTag == "any"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.pcTagAllocSrc == "idmanager"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.prefGrMemb == "exclude"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.prio == "level3"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.rn == "epg-usge_epg"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.scope == "0"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.shutdown == "no"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.status == "created"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.triggerSt == "not_triggerable"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.txId == "0"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.annotation == "orchestrator:ansible"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.name == "default"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.prec == "100"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.0.fvCrtrn.attributes.rn == "crtrn"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.1.fvRsBd.attributes.annotation == "orchestrator:ansible"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.children.1.fvRsBd.attributes.tnFvBDName == "default"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.annotation == "orchestrator:ansible"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.cost == "11"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.ctrl == "mtu-ignore"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.deadIntvl == "12"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.descr == ""
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.helloIntvl == "13"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.name == "ansible_ospf"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.nwT == "bcast"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.pfxSuppress == "disable"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.prio == "220"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.rexmitIntvl == "15"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.rn == "ospfIfPol-ansible_ospf"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.status == "created"
+    - nm_add_tenant_json.imdata.0.fvTenant.children.2.ospfIfPol.attributes.xmitDelay == "16"
+    - cm_add_tenant_json.proposed == nm_add_tenant_json.proposed == nm_add_tenant_json_again.proposed
+    - nm_add_tenant_json_again is not changed
+    - nm_add_tenant_json_again.imdata == []
+    - nm_add_tenant_json.proposed == nm_add_tenant_json_again.proposed
+    - rm_tenant_json is changed
+    - rm_tenant_json.imdata.0.fvTenant.attributes.annotation == "test:inoption"
+    - rm_tenant_json.imdata.0.fvTenant.attributes.descr == "Ansible test tenant"
+    - rm_tenant_json.imdata.0.fvTenant.attributes.dn == "uni/tn-ansible_test_json"
+    - rm_tenant_json.imdata.0.fvTenant.attributes.name == "ansible_test_json"
+    - rm_tenant_json.imdata.0.fvTenant.attributes.rn == ""
+    - rm_tenant_json.imdata.0.fvTenant.attributes.status == "deleted"

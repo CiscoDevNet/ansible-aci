@@ -399,17 +399,29 @@ def switch_config_spec(policy_type):
         ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
-def recursive_convert_none_int_float_to_str_in_dict_list(data):
+def convert_primitives_to_string(data):
+    """
+    Recursively converts None, int, and float values within dictionaries, lists, and other iterable structures to their string representations.
+    Boolean and string values are returned as-is.
+    None values are converted to an empty string "".
+    Integers and floats are converted using `str()`.
+
+    :param data: The input data structure, which can be a dictionary, list, tuple, set, int, float, str, bool, or None.
+    :return: A new data structure with None, int, and float values converted to strings.
+    """
     if isinstance(data, (bool, str)):
         return data
     elif isinstance(data, (int, float)):
         return str(data)
     elif isinstance(data, dict):
-        return {k: recursive_convert_none_int_float_to_str_in_dict_list(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [recursive_convert_none_int_float_to_str_in_dict_list(item) for item in data]
+        return {k: convert_primitives_to_string(v) for k, v in data.items()}
+    elif hasattr(data, "__iter__"):  # Handles lists, tuples, sets, etc.
+        return [convert_primitives_to_string(item) for item in data]
     elif data is None:
         return ""
+    else:
+        # For any other types not explicitly handled (e.g., custom objects), return as is
+        return data
 
 
 class ACIModule(object):
