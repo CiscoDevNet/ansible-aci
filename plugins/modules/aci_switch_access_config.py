@@ -63,7 +63,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add Switch Access Policy Configuration to a Leaf node
-  cisco.aci.aci_switch_config:
+  cisco.aci.aci_switch_access_config:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -74,7 +74,7 @@ EXAMPLES = r"""
   delegate_to: localhost
 
 - name: Query Switch Access Policy Configuration for a specific node
-  cisco.aci.aci_switch_config:
+  cisco.aci.aci_switch_access_config:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -84,7 +84,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query all Switch Access Policy Configurations
-  cisco.aci.aci_switch_config:
+  cisco.aci.aci_switch_access_config:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -93,7 +93,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Remove a Switch Access Policy Configuration
-  cisco.aci.aci_switch_config:
+  cisco.aci.aci_switch_access_config:
     host: apic
     username: admin
     password: SomeSecretPassword
