@@ -69,15 +69,12 @@ options:
     description:
     - The page number to return.
     type: int
-  primitives_to_string:
+  normalize_payload_values:
     description:
-    - If this parameter is not specified in the task,
-      the value of environment variable ACI_PRIMITIVES_TO_STRING or ACI_CONVERT_PRIMITIVES_TO_STRING will be used instead.
+    - If this parameter is not specified in the task, the value of environment variable ACI_NORMALIZE_PAYLOAD_VALUES will be used instead.
     - This parameter enforces the conversion of integer and float values to strings in Ansible Core v2.19.0 and later, as well as Jinja2 v3.1.6 and later.
-    - To disable this conversion,
-      set O(primitives_to_string=false) or unset the ACI_PRIMITIVES_TO_STRING and ACI_CONVERT_PRIMITIVES_TO_STRING environment variables.
+    - To disable this conversion, set O(normalize_payload_values=false) or unset the ACI_NORMALIZE_PAYLOAD_VALUES environment variable.
     type: bool
-    aliases: [ convert_primitives_to_string ]
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
@@ -320,7 +317,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     ACIModule,
     aci_argument_spec,
     aci_annotation_spec,
-    convert_primitives_to_string,
+    convert_numbers_and_none_values_to_string,
 )
 from ansible.module_utils._text import to_text
 from ansible_collections.cisco.aci.plugins.module_utils.annotation_unsupported import (
@@ -413,11 +410,9 @@ def main():
         page_size=dict(type="int"),
         page=dict(type="int"),
         # To support Ansible Core 2.19.0 and later, Jinja2 3.1.6 and later versions.
-        # The primitives_to_string parameter defaults to True to maintain compatibility with Ansible Core versions earlier than 2.19.0.
-        primitives_to_string=dict(
+        normalize_payload_values=dict(
             type="bool",
-            aliases=["convert_primitives_to_string"],
-            fallback=(env_fallback, ["ACI_CONVERT_PRIMITIVES_TO_STRING", "ACI_PRIMITIVES_TO_STRING"]),
+            fallback=(env_fallback, ["ACI_NORMALIZE_PAYLOAD_VALUES"]),
         ),
     )
 
@@ -434,7 +429,7 @@ def main():
     annotation = module.params.get("annotation")
     page_size = module.params.get("page_size")
     page = module.params.get("page")
-    primitives_to_string = module.params.get("primitives_to_string")
+    normalize_payload_values = module.params.get("normalize_payload_values")
     if module.params.get("method") != "get" and page_size:
         module.fail_json(msg="Pagination parameters (page and page_size) are only valid for GET method")
 
@@ -469,17 +464,17 @@ def main():
             payload = config_object.read()
 
     # Validate payload
-    if rest_type == "json" and (content or payload):
-        if (isinstance(content, str) or isinstance(payload, str)) and HAS_YAML:
+    if rest_type == "json" and payload:
+        if isinstance(payload, str) and HAS_YAML:
             try:
                 payload = yaml.safe_load(payload)
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: {0}".format(to_text(e)), exception=to_text(e), payload=payload)
         add_annotation(annotation, payload)
-        payload = json.dumps(convert_primitives_to_string(payload) if primitives_to_string else payload)
+        payload = json.dumps(convert_numbers_and_none_values_to_string(payload) if normalize_payload_values else payload)
 
     elif rest_type == "xml" and HAS_LXML_ETREE:
-        if content and isinstance(content, dict) and HAS_XMLJSON_COBRA:
+        if payload and isinstance(payload, dict) and HAS_XMLJSON_COBRA:
             # Validate inline YAML/JSON
             add_annotation(annotation, payload)
             payload = etree.tostring(cobra.etree(payload)[0], encoding="unicode")

@@ -386,7 +386,7 @@
 
 - name: Add Port Channel interface policy JSON with prio attribute int value (check_mode)
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest: &cm_add_link_aggregation_control_protocol_json
     <<: *aci_info
     path: api/mo/uni/infra/lacpifp-link_aggregation_control_protocol.json
@@ -407,14 +407,14 @@
 
 - name: Add Port Channel interface policy JSON with prio attribute int value
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_link_aggregation_control_protocol_json
   register: nm_add_link_aggregation_control_protocol
 
 - name: Add Port Channel interface policy JSON with prio attribute int value again
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_link_aggregation_control_protocol_json
   register: nm_add_link_aggregation_control_protocol_again
@@ -466,7 +466,7 @@
 
 - name: Add tenant with nested child objects (check_mode)
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest: &cm_add_tenant_json
     <<: *aci_info
     path: api/mo/uni/tn-ansible_test_json.json
@@ -522,14 +522,14 @@
 
 - name: Add tenant with nested child objects
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_tenant_json
   register: nm_add_tenant_json
 
 - name: Add tenant with nested child objects again
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_tenant_json
   register: nm_add_tenant_json_again

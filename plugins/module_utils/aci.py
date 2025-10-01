@@ -399,7 +399,9 @@ def switch_config_spec(policy_type):
         ),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
-def convert_primitives_to_string(data):
+
+
+def convert_numbers_and_none_values_to_string(data):
     """
     Recursively converts None, int, and float values within dictionaries, lists, and other iterable structures to their string representations.
     Boolean and string values are returned as-is.
@@ -414,9 +416,9 @@ def convert_primitives_to_string(data):
     elif isinstance(data, (int, float)):
         return str(data)
     elif isinstance(data, dict):
-        return {k: convert_primitives_to_string(v) for k, v in data.items()}
+        return {k: convert_numbers_and_none_values_to_string(v) for k, v in data.items()}
     elif hasattr(data, "__iter__"):  # Handles lists, tuples, sets, etc.
-        return [convert_primitives_to_string(item) for item in data]
+        return [convert_numbers_and_none_values_to_string(item) for item in data]
     elif data is None:
         return ""
     else:

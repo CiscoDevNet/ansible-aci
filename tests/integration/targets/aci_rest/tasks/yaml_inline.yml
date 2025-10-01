@@ -255,7 +255,7 @@
 
 - name: Add Port Channel interface policy YML with prio attribute int value (check_mode)
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest: &cm_add_link_aggregation_control_protocol_yml
     <<: *aci_info
     path: api/mo/uni/infra/lacpifp-link_aggregation_control_protocol.json
@@ -271,14 +271,14 @@
 
 - name: Add Port Channel interface policy YML with prio attribute int value
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_link_aggregation_control_protocol_yml
   register: nm_add_link_aggregation_control_protocol
 
 - name: Add Port Channel interface policy YML with prio attribute int value again
   environment:
-    ACI_PRIMITIVES_TO_STRING: "true"
+    ACI_NORMALIZE_PAYLOAD_VALUES: "true"
   cisco.aci.aci_rest:
     <<: *cm_add_link_aggregation_control_protocol_yml
   register: nm_add_link_aggregation_control_protocol_again
