@@ -38,7 +38,7 @@ options:
     - The list of subnets in CIDR format to associate with the external management network instance profile.
     - When state is C(present), any existing subnets will be removed from the object if they are not present in this list.
     type: list
-    elements: string
+    elements: str
     aliases: [ subnet_list, networks, network_list ]
   state:
     description:
