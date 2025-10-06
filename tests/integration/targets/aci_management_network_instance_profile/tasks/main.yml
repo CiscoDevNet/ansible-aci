@@ -34,8 +34,8 @@
     qos_class: unspecified
     description: Ansible test profile
     subnets:
-      - "10.20.30.0/24"
-      - "192.168.10.0/24"
+      - 10.20.30.0/24
+      - 192.168.10.0/24
     state: present
   check_mode: true
   register: cm_add_profile
@@ -47,8 +47,8 @@
     qos_class: unspecified
     description: Ansible test profile
     subnets:
-      - "10.20.30.0/24"
-      - "192.168.10.0/24"
+      - 10.20.30.0/24
+      - 192.168.10.0/24
     state: present
   check_mode: false
   register: nm_add_profile
@@ -60,8 +60,8 @@
     qos_class: unspecified
     description: Ansible test profile
     subnets:
-      - "10.20.30.0/24"
-      - "192.168.10.0/24"
+      - 10.20.30.0/24
+      - 192.168.10.0/24
     state: present
   check_mode: false
   register: nm_add_profile_again
@@ -70,14 +70,25 @@
   ansible.builtin.assert:
     that:
       - cm_add_profile is changed
+      - cm_add_profile.previous == []
+      - cm_add_profile.current == []
+      - cm_add_profile.proposed.mgmtInstP.attributes.name == "ans_network_inst_profile"
+      - cm_add_profile.proposed.mgmtInstP.attributes.prio == "unspecified"
+      - cm_add_profile.proposed.mgmtInstP.attributes.descr == "Ansible test profile"
+      - cm_add_profile.proposed.mgmtInstP.children.0.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.10.0/24"]
+      - cm_add_profile.proposed.mgmtInstP.children.1.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.10.0/24"]
       - nm_add_profile is changed
-      - nm_add_profile.sent == cm_add_profile.sent
+      - nm_add_profile.previous == []
       - nm_add_profile.current.0.mgmtInstP.attributes.name == "ans_network_inst_profile"
       - nm_add_profile.current.0.mgmtInstP.attributes.prio == "unspecified"
       - nm_add_profile.current.0.mgmtInstP.attributes.descr == "Ansible test profile"
       - nm_add_profile.current.0.mgmtInstP.children.0.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.10.0/24"]
       - nm_add_profile.current.0.mgmtInstP.children.1.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.10.0/24"]
+      - nm_add_profile.proposed == cm_add_profile.proposed
       - nm_add_profile_again is not changed
+      - nm_add_profile_again.previous == nm_add_profile.current
+      - nm_add_profile_again.current == nm_add_profile.current
+      - nm_add_profile_again.proposed == nm_add_profile.proposed
 
 # MODIFY PROFILE
 - name: Update Management Network Instance Profile
@@ -87,8 +98,8 @@
     qos_class: level1
     description: Updated Ansible test profile
     subnets:
-      - "10.20.30.0/24"
-      - "192.168.11.0/24"
+      - 10.20.30.0/24
+      - 192.168.11.0/24
     state: present
   check_mode: false
   register: update_profile
@@ -97,12 +108,20 @@
   ansible.builtin.assert:
     that:
       - update_profile is changed
+      - update_profile.previous == nm_add_profile_again.current
       - update_profile.current.0.mgmtInstP.attributes.name == "ans_network_inst_profile"
       - update_profile.current.0.mgmtInstP.attributes.prio == "level1"
       - update_profile.current.0.mgmtInstP.attributes.descr == "Updated Ansible test profile"
       - update_profile.current.0.mgmtInstP.children.0.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.11.0/24"]
       - update_profile.current.0.mgmtInstP.children.1.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.11.0/24"]
       - update_profile.current.0.mgmtInstP.children | length == 2
+      - update_profile.proposed.mgmtInstP.attributes.name == "ans_network_inst_profile"
+      - update_profile.proposed.mgmtInstP.attributes.prio == "level1"
+      - update_profile.proposed.mgmtInstP.attributes.descr == "Updated Ansible test profile"
+      - update_profile.proposed.mgmtInstP.children.0.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.11.0/24"]
+      - update_profile.proposed.mgmtInstP.children.1.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.11.0/24"]
+      - update_profile.proposed.mgmtInstP.children.2.mgmtSubnet.attributes.ip == "192.168.10.0/24"
+      - update_profile.proposed.mgmtInstP.children.2.mgmtSubnet.attributes.status == "deleted"
 
 # QUERY PROFILE
 - name: Query Management Network Instance Profile
@@ -111,6 +130,18 @@
     name: ans_network_inst_profile
     state: query
   register: query_profile
+
+- name: Create Second Management Network Instance Profile
+  cisco.aci.aci_management_network_instance_profile:
+    <<: *aci_info
+    name: ans_second_network_inst_profile
+    state: present
+
+- name: Query All Management Network Instance Profiles
+  cisco.aci.aci_management_network_instance_profile:
+    <<: *aci_info
+    state: query
+  register: query_all_profiles
 
 - name: Verify object query
   ansible.builtin.assert:
@@ -122,6 +153,9 @@
       - query_profile.current.0.mgmtInstP.children.0.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.11.0/24"]
       - query_profile.current.0.mgmtInstP.children.1.mgmtSubnet.attributes.ip in ["10.20.30.0/24", "192.168.11.0/24"]
       - query_profile.current.0.mgmtInstP.children | length == 2
+      - query_profile.proposed == {}
+      - query_all_profiles is not changed
+      - query_all_profiles.proposed == {}
 
 # DELETE PROFILE
 - name: Delete Management Network Instance Profile
@@ -143,4 +177,19 @@
     that:
       - remove_profile is changed
       - remove_profile.current == []
+      - remove_profile.previous.0.mgmtInstP.attributes.name == "ans_network_inst_profile"
+      - remove_profile.previous.0.mgmtInstP.attributes.prio == "level1"
+      - remove_profile.previous.0.mgmtInstP.children.0.mgmtSubnet.attributes.ip == "192.168.11.0/24"
+      - remove_profile.previous.0.mgmtInstP.children.1.mgmtSubnet.attributes.ip == "10.20.30.0/24"
+      - remove_profile.proposed == {}
       - remove_profile_again is not changed
+      - remove_profile_again.current == []
+      - remove_profile_again.previous == []
+      - remove_profile_again.proposed == {}
+
+# CLEAN ENVIRONMENT
+- name: Delete Second Management Network Instance Profile
+  cisco.aci.aci_management_network_instance_profile:
+    <<: *aci_info
+    name: ans_second_network_inst_profile
+    state: absent
