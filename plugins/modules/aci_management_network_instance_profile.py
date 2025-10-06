@@ -57,7 +57,7 @@ extends_documentation_fragment:
 
 seealso:
 - name: APIC Management Information Model reference
-  description: More information about the internal APIC class B(fv:Ctx).
+  description: More information about the internal APIC class B(mgmt:InstP).
   link: https://developer.cisco.com/docs/apic-mim-ref/
 author:
 - Tim Cragg (@timcragg)
@@ -71,8 +71,8 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     name: lab_network_inst_profile
     subnets:
-      - "10.20.30.0/24"
-      - "192.168.10.0/24"
+      - 10.20.30.0/24
+      - 192.168.10.0/24
     state: present
   delegate_to: localhost
 
@@ -212,6 +212,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import VALID_QOS_CLASSES
 
 
 def main():
@@ -219,7 +220,7 @@ def main():
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
         profile=dict(type="str", aliases=["name", "profile_name"]),
-        qos_class=dict(type="str", aliases=["qos", "priority", "prio"], choices=["level1", "level2", "level3", "level4", "level5", "level6", "unspecified"]),
+        qos_class=dict(type="str", aliases=["qos", "priority", "prio"], choices=VALID_QOS_CLASSES),
         description=dict(type="str", aliases=["descr"]),
         subnets=dict(type="list", elements="str", aliases=["subnet_list", "networks", "network_list"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
@@ -231,7 +232,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["profile"]],
-            ["state", "present", ["profile", "subnets"]],
+            ["state", "present", ["profile"]],
         ],
     )
 
@@ -269,22 +270,23 @@ def main():
 
     if state == "present":
         child_configs = []
-        for subnet in subnets:
-            child_configs.append(dict(mgmtSubnet=dict(attributes=dict(ip=subnet))))
-        if isinstance(aci.existing, list) and len(aci.existing) > 0:
-            for child in aci.existing[0].get("mgmtInstP", {}).get("children", {}):
-                # Remove any existing subnet entries that are not in the requested subnet list
-                if child.get("mgmtSubnet") and child.get("mgmtSubnet").get("attributes").get("ip") not in subnets:
-                    child_configs.append(
-                        {
-                            "mgmtSubnet": {
-                                "attributes": {
-                                    "ip": child.get("mgmtSubnet").get("attributes").get("ip"),
-                                    "status": "deleted",
+        if subnets:
+            for subnet in subnets:
+                child_configs.append(dict(mgmtSubnet=dict(attributes=dict(ip=subnet))))
+            if isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("mgmtInstP", {}).get("children", {}):
+                    # Remove any existing subnet entries that are not in the requested subnet list
+                    if child.get("mgmtSubnet") and child.get("mgmtSubnet").get("attributes").get("ip") not in subnets:
+                        child_configs.append(
+                            {
+                                "mgmtSubnet": {
+                                    "attributes": {
+                                        "ip": child.get("mgmtSubnet").get("attributes").get("ip"),
+                                        "status": "deleted",
+                                    }
                                 }
                             }
-                        }
-                    )
+                        )
 
         aci.payload(
             aci_class="mgmtInstP",
