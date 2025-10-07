@@ -20,11 +20,14 @@
       output_level: debug
 
 # CLEAN ENVIRONMENT
-- name: Remove Management Network Instance Profile
+- name: Remove Management Network Instance Profiles
   cisco.aci.aci_management_network_instance_profile:
     <<: *aci_info
-    name: ans_network_inst_profile
+    name: "{{ item }}"
     state: absent
+  loop:
+    - ans_network_inst_profile
+    - ans_second_network_inst_profile
 
 # ADD PROFILE
 - name: Create Management Network Instance Profile (check mode)
@@ -156,6 +159,7 @@
       - query_profile.proposed == {}
       - query_all_profiles is not changed
       - query_all_profiles.proposed == {}
+      - query_all_profiles.current.0.mgmtExtMgmtEntity.children | length == 2
 
 # DELETE PROFILE
 - name: Delete Management Network Instance Profile
