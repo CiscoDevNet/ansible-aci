@@ -36,7 +36,7 @@ options:
   subnets:
     description:
     - The list of subnets in CIDR format to associate with the external management network instance profile.
-    - When state is C(present), any existing subnets will be removed from the object if they are not present in this list.
+    - When state is C(present) and a list of subnets is provided, any existing subnets will be removed from the object if they are not present in this list.
     type: list
     elements: str
     aliases: [ subnet_list, networks, network_list ]
@@ -263,7 +263,7 @@ def main():
             module_object=profile,
             target_filter={"name": profile},
         ),
-        child_classes=["mgmtSubnet", "mgmtRsOoBCons"],
+        child_classes=["mgmtSubnet"],
     )
 
     aci.get_existing()
@@ -274,14 +274,14 @@ def main():
             for subnet in subnets:
                 child_configs.append(dict(mgmtSubnet=dict(attributes=dict(ip=subnet))))
             if isinstance(aci.existing, list) and len(aci.existing) > 0:
-                for child in aci.existing[0].get("mgmtInstP", {}).get("children", {}):
+                for child in aci.existing[0].get("mgmtInstP", {}).get("children", []):
                     # Remove any existing subnet entries that are not in the requested subnet list
-                    if child.get("mgmtSubnet") and child.get("mgmtSubnet").get("attributes").get("ip") not in subnets:
+                    if child.get("mgmtSubnet") and child.get("mgmtSubnet").get("attributes", {}).get("ip") not in subnets:
                         child_configs.append(
                             {
                                 "mgmtSubnet": {
                                     "attributes": {
-                                        "ip": child.get("mgmtSubnet").get("attributes").get("ip"),
+                                        "ip": child.get("mgmtSubnet").get("attributes", {}).get("ip"),
                                         "status": "deleted",
                                     }
                                 }
