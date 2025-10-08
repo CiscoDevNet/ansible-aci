@@ -246,20 +246,8 @@ def main():
     aci = ACIModule(module)
     aci.construct_url(
         root_class=dict(
-            aci_class="fvTenant",
-            aci_rn="tn-mgmt",
-            module_object="mgmt",
-            target_filter={"name": "mgmt"},
-        ),
-        subclass_1=dict(
-            aci_class="mgmtExtMgmtEntity",
-            aci_rn="extmgmt-default",
-            module_object="default",
-            target_filter={"name": "default"},
-        ),
-        subclass_2=dict(
             aci_class="mgmtInstP",
-            aci_rn="instp-{0}".format(profile),
+            aci_rn="tn-mgmt/extmgmt-default/instp-{0}".format(profile),
             module_object=profile,
             target_filter={"name": profile},
         ),
