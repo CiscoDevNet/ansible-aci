@@ -431,7 +431,7 @@
         state: absent
       when: tenant_present is changed
 
-    - name: cleanup mgmt contract
+    - name: cleanup oob contract
       cisco.aci.aci_oob_contract:
         <<: *aci_info
         contract: ansible_test_oob_contract
