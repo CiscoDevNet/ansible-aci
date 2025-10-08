@@ -37,6 +37,12 @@ options:
     - The name of the Contract.
     type: str
     aliases: [ contract_name ]
+  contract_type:
+    description:
+    - The type of contract, either standard or Out of Band (oob).
+    type: str
+    choices: [ standard, oob ]
+    default: standard
   reverse_filter:
     description:
     - Determines if the APIC should reverse the src and dst ports to allow the
@@ -119,9 +125,10 @@ extends_documentation_fragment:
 
 notes:
 - The C(tenant) and C(contract) used must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_contract) modules can be used for this.
+  The M(cisco.aci.aci_tenant) and M(cisco.aci.aci_contract) or M(cisco.aci.aci_oob_contract) modules can be used for this.
 seealso:
 - module: cisco.aci.aci_contract
+- module: cisco.aci.aci_oob_contract
 - module: cisco.aci.aci_tenant
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class B(vz:Subj).
@@ -143,6 +150,19 @@ EXAMPLES = r"""
     reverse_filter: true
     priority: level1
     dscp: unspecified
+    state: present
+  register: query_result
+
+- name: Add a new subject to an out of band contract
+  cisco.aci.aci_contract_subject:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: production
+    contract: oob_mgmt_ctr
+    contract_type: oob
+    subject: default
+    description: test
     state: present
   register: query_result
 
@@ -292,6 +312,7 @@ from ansible_collections.cisco.aci.plugins.module_utils.aci import (
     aci_contract_dscp_spec,
     aci_contract_qos_spec,
 )
+from ansible_collections.cisco.aci.plugins.module_utils.constants import CONTRACT_CLASS_MAPPING
 
 MATCH_MAPPING = dict(
     all="All",
@@ -307,6 +328,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
+        contract_type=dict(type="str", choices=["standard", "oob"], default="standard"),
         subject=dict(type="str", aliases=["contract_subject", "name", "subject_name"]),  # Not required for querying all objects
         reverse_filter=dict(type="bool"),
         description=dict(type="str", aliases=["descr"]),
@@ -344,6 +366,7 @@ def main():
     dscp_provider_to_consumer = module.params.get("dscp_provider_to_consumer")
     reverse_filter = aci.boolean(module.params.get("reverse_filter"))
     contract = module.params.get("contract")
+    contract_type = module.params.get("contract_type")
     description = module.params.get("description")
     consumer_match = module.params.get("consumer_match")
     if consumer_match is not None:
@@ -357,6 +380,9 @@ def main():
     direction = module.params.get("apply_both_direction")
 
     subject_class = "vzSubj"
+    ctr_class = CONTRACT_CLASS_MAPPING[contract_type]["class"]
+    ctr_rn = CONTRACT_CLASS_MAPPING[contract_type]["rn"].format(contract)
+
     base_subject_dict = dict(
         root_class=dict(
             aci_class="fvTenant",
@@ -365,8 +391,8 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="vzBrCP",
-            aci_rn="brc-{0}".format(contract),
+            aci_class=ctr_class,
+            aci_rn=ctr_rn,
             module_object=contract,
             target_filter={"name": contract},
         ),
