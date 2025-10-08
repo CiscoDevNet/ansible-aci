@@ -27,6 +27,12 @@
         tenant: ansible_test
         state: absent
 
+    - name: ensure OOB contract is deleted for clean state
+      cisco.aci.aci_oob_contract:
+        <<: *aci_info
+        contract: ansible_test_oob_contract
+        state: absent
+
     - name: ensure tenant exists for tests to kick off
       cisco.aci.aci_tenant: &aci_tenant_present
         <<: *aci_info
@@ -39,6 +45,12 @@
         <<: *aci_tenant_present
         contract: anstest
       register: contract_present
+
+    - name: ensure OOB contract exists for tests to kick off
+      cisco.aci.aci_oob_contract:
+        <<: *aci_info
+        contract: ansible_test_oob_contract
+        state: present
 
     - name: create subject - check mode works
       cisco.aci.aci_contract_subject: &aci_subject_present
@@ -392,9 +404,35 @@
           - nm_subject_one_way_dscp_change.current.0.vzSubj.children.1.vzInTerm.attributes.prio == "unspecified"
           - nm_subject_one_way_dscp_change.current.0.vzSubj.children.1.vzInTerm.attributes.targetDscp == "AF13"
 
+    - name: create OOB contract subject
+      cisco.aci.aci_contract_subject:
+        <<: *aci_info
+        tenant: mgmt
+        contract: ansible_test_oob_contract
+        contract_type: oob
+        subject: ansible_test_ctr_subj
+        description: ansible test OOB subject
+      register: nm_oob_subject
+
+    - name: oob subject assertions
+      ansible.builtin.assert:
+        that:
+          - nm_oob_subject is changed
+          - nm_oob_subject.sent.vzSubj.attributes.name == "ansible_test_ctr_subj"
+          - nm_oob_subject.sent.vzSubj.attributes.descr == "ansible test OOB subject"
+          - nm_oob_subject.previous == []
+          - nm_oob_subject.current.0.vzSubj.attributes.name == "ansible_test_ctr_subj"
+          - nm_oob_subject.current.0.vzSubj.attributes.descr == "ansible test OOB subject"
+
   always:
     - name: cleanup tenant
       cisco.aci.aci_tenant:
         <<: *aci_tenant_present
         state: absent
       when: tenant_present is changed
+
+    - name: cleanup mgmt contract
+      cisco.aci.aci_oob_contract:
+        <<: *aci_info
+        contract: ansible_test_oob_contract
+        state: absent

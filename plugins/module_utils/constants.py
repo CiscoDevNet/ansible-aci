@@ -544,3 +544,5 @@ SWITCH_CONFIG_FORMAT_MAP = {
         "leaf": "uni/infra/funcprof/accnodepgrp-{0}",
     },
 }
+
+CONTRACT_CLASS_MAPPING = dict(standard={"class": "vzBrCP", "rn": "brc-{0}"}, oob={"class": "vzOOBBrCP", "rn": "oobbrc-{0}"})
