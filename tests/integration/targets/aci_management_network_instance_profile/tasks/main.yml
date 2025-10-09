@@ -181,6 +181,8 @@
       - clear_subnets.current.0.mgmtInstP.attributes.name == "ans_network_inst_profile"
       - clear_subnets.current.0.mgmtInstP.attributes.prio == "level1"
       - clear_subnets.current.0.mgmtInstP.attributes.descr == "Updated Ansible test profile"
+      # Verify there are no mgmtSubnet child objects remaining
+      - clear_subnets.current.0.children is not defined
       - clear_subnets.proposed.mgmtInstP.attributes.name == "ans_network_inst_profile"
       - clear_subnets.proposed.mgmtInstP.attributes.prio == "level1"
       - clear_subnets.proposed.mgmtInstP.attributes.descr == "Updated Ansible test profile"
