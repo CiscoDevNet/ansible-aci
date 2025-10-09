@@ -37,6 +37,7 @@ options:
     description:
     - The list of subnets in CIDR format to associate with the external management network instance profile.
     - When state is C(present) and a list of subnets is provided, any existing subnets will be removed from the object if they are not present in this list.
+    - When subnets is set to an empty list and state is C(present), all existing subnets will be removed from the profile.
     type: list
     elements: str
     aliases: [ subnet_list, networks, network_list ]
@@ -73,6 +74,16 @@ EXAMPLES = r"""
     subnets:
       - 10.20.30.0/24
       - 192.168.10.0/24
+    state: present
+  delegate_to: localhost
+
+- name: Delete all subnets from management network instance profile
+  cisco.aci.aci_management_network_instance_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    name: lab_network_inst_profile
+    subnets: []
     state: present
   delegate_to: localhost
 
@@ -258,7 +269,7 @@ def main():
 
     if state == "present":
         child_configs = []
-        if subnets:
+        if subnets is not None:
             for subnet in subnets:
                 child_configs.append(dict(mgmtSubnet=dict(attributes=dict(ip=subnet))))
             if isinstance(aci.existing, list) and len(aci.existing) > 0:

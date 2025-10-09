@@ -161,6 +161,33 @@
       - query_all_profiles.proposed == {}
       - query_all_profiles.current | length == 2
 
+# CLEAR SUBNET LIST
+- name: Clear subnets list
+  cisco.aci.aci_management_network_instance_profile:
+    <<: *aci_info
+    name: ans_network_inst_profile
+    qos_class: level1
+    description: Updated Ansible test profile
+    subnets: []
+    state: present
+  check_mode: false
+  register: clear_subnets
+
+- name: Verify subnets list is emptied
+  ansible.builtin.assert:
+    that:
+      - clear_subnets is changed
+      - clear_subnets.previous == update_profile.current
+      - clear_subnets.current.0.mgmtInstP.attributes.name == "ans_network_inst_profile"
+      - clear_subnets.current.0.mgmtInstP.attributes.prio == "level1"
+      - clear_subnets.current.0.mgmtInstP.attributes.descr == "Updated Ansible test profile"
+      - clear_subnets.proposed.mgmtInstP.attributes.name == "ans_network_inst_profile"
+      - clear_subnets.proposed.mgmtInstP.attributes.prio == "level1"
+      - clear_subnets.proposed.mgmtInstP.attributes.descr == "Updated Ansible test profile"
+      - clear_subnets.proposed.mgmtInstP.children.0.mgmtSubnet.attributes.status == "deleted"
+      - clear_subnets.proposed.mgmtInstP.children.1.mgmtSubnet.attributes.status == "deleted"
+      - clear_subnets.proposed.mgmtInstP.children | length == 2
+
 # DELETE PROFILE
 - name: Delete Management Network Instance Profile
   cisco.aci.aci_management_network_instance_profile:
@@ -183,8 +210,6 @@
       - remove_profile.current == []
       - remove_profile.previous.0.mgmtInstP.attributes.name == "ans_network_inst_profile"
       - remove_profile.previous.0.mgmtInstP.attributes.prio == "level1"
-      - remove_profile.previous.0.mgmtInstP.children.0.mgmtSubnet.attributes.ip == "192.168.11.0/24"
-      - remove_profile.previous.0.mgmtInstP.children.1.mgmtSubnet.attributes.ip == "10.20.30.0/24"
       - remove_profile.proposed == {}
       - remove_profile_again is not changed
       - remove_profile_again.current == []
