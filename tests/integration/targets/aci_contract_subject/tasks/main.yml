@@ -414,15 +414,78 @@
         description: ansible test OOB subject
       register: nm_oob_subject
 
-    - name: oob subject assertions
+    - name: oob subject creation assertions
       ansible.builtin.assert:
         that:
           - nm_oob_subject is changed
           - nm_oob_subject.sent.vzSubj.attributes.name == "ansible_test_ctr_subj"
           - nm_oob_subject.sent.vzSubj.attributes.descr == "ansible test OOB subject"
+          - nm_oob_subject.sent.vzSubj.attributes.dn == "uni/tn-mgmt/oobbrc-ansible_test_oob_contract/subj-ansible_test_ctr_subj"
           - nm_oob_subject.previous == []
           - nm_oob_subject.current.0.vzSubj.attributes.name == "ansible_test_ctr_subj"
           - nm_oob_subject.current.0.vzSubj.attributes.descr == "ansible test OOB subject"
+          - nm_oob_subject.current.0.vzSubj.attributes.dn == "uni/tn-mgmt/oobbrc-ansible_test_oob_contract/subj-ansible_test_ctr_subj"
+
+    - name: update OOB contract subject
+      cisco.aci.aci_contract_subject:
+        <<: *aci_info
+        tenant: mgmt
+        contract: ansible_test_oob_contract
+        contract_type: oob
+        subject: ansible_test_ctr_subj
+        description: updated ansible test OOB subject
+      register: oob_subject_update
+
+    - name: oob subject update assertions
+      ansible.builtin.assert:
+        that:
+          - oob_subject_update is changed
+          - oob_subject_update.sent.vzSubj.attributes.descr == "updated ansible test OOB subject"
+          - oob_subject_update.current.0.vzSubj.attributes.name == "ansible_test_ctr_subj"
+          - oob_subject_update.current.0.vzSubj.attributes.descr == "updated ansible test OOB subject"
+          - oob_subject_update.current.0.vzSubj.attributes.dn == "uni/tn-mgmt/oobbrc-ansible_test_oob_contract/subj-ansible_test_ctr_subj"
+          - oob_subject_update.previous.0.vzSubj.attributes.name == "ansible_test_ctr_subj"
+          - oob_subject_update.previous.0.vzSubj.attributes.descr == "ansible test OOB subject"
+          - oob_subject_update.previous.0.vzSubj.attributes.dn == "uni/tn-mgmt/oobbrc-ansible_test_oob_contract/subj-ansible_test_ctr_subj"
+
+    - name: query OOB contract subject
+      cisco.aci.aci_contract_subject:
+        <<: *aci_info
+        tenant: mgmt
+        contract: ansible_test_oob_contract
+        contract_type: oob
+        subject: ansible_test_ctr_subj
+        state: query
+      register: oob_subject_query
+
+    - name: oob subject query assertions
+      ansible.builtin.assert:
+        that:
+          - oob_subject_query is not changed
+          - oob_subject_query.sent == {}
+          - oob_subject_query.current.0.vzSubj.attributes.name == "ansible_test_ctr_subj"
+          - oob_subject_query.current.0.vzSubj.attributes.descr == "updated ansible test OOB subject"
+          - oob_subject_query.current.0.vzSubj.attributes.dn == "uni/tn-mgmt/oobbrc-ansible_test_oob_contract/subj-ansible_test_ctr_subj"
+
+    - name: delete OOB contract subject
+      cisco.aci.aci_contract_subject:
+        <<: *aci_info
+        tenant: mgmt
+        contract: ansible_test_oob_contract
+        contract_type: oob
+        subject: ansible_test_ctr_subj
+        state: absent
+      register: oob_subject_delete
+
+    - name: oob subject deletion assertions
+      ansible.builtin.assert:
+        that:
+          - oob_subject_delete is changed
+          - oob_subject_delete.sent == {}
+          - oob_subject_delete.previous.0.vzSubj.attributes.name == "ansible_test_ctr_subj"
+          - oob_subject_delete.previous.0.vzSubj.attributes.descr == "updated ansible test OOB subject"
+          - oob_subject_delete.previous.0.vzSubj.attributes.dn == "uni/tn-mgmt/oobbrc-ansible_test_oob_contract/subj-ansible_test_ctr_subj"
+          - oob_subject_delete.current == []
 
   always:
     - name: cleanup tenant
