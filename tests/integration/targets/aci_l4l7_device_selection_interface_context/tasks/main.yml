@@ -128,6 +128,39 @@
     bd: ansible_if_context_bd
     state: present
 
+# CREATE L3Out and External EPG
+- name: Add a new vrf
+  cisco.aci.aci_vrf:
+    <<: *aci_info
+    tenant: ansible_tenant
+    vrf: ansible_vrf
+    state: present
+
+- name: Add a new Domain
+  cisco.aci.aci_domain:
+    <<: *aci_info
+    domain: ansible_dom
+    domain_type: l3dom
+    state: present
+
+- name: Add a new L3Out
+  cisco.aci.aci_l3out: 
+    <<: *aci_info
+    tenant: ansible_tenant
+    vrf: ansible_vrf
+    l3out: ansible_l3out
+    domain: ansible_dom
+    route_control: export
+    state: present
+
+- name: Add a new ExtEpg
+  cisco.aci.aci_l3out_extepg:
+    <<: *aci_info
+    tenant: ansible_tenant
+    l3out: ansible_l3out
+    name: ansible_extepg
+    state: present
+
 # CREATE LOGICAL INTERFACE
 - name: Add a new logical interface
   cisco.aci.aci_l4l7_logical_interface:
@@ -292,6 +325,49 @@
     bridge_domain: ansible_if_context_bd
     bridge_domain_tenant: common
     state: present
+  register: re_add_bd
+
+- name: Modify L4-L7 Device Selection Logical Interface Context by replacing BD with External EPG
+  cisco.aci.aci_l4l7_device_selection_if_context: &interface_external_epg
+    <<: *aci_info
+    tenant: ansible_tenant
+    contract: ansible_contract
+    graph: ansible_graph
+    node: ansible_node
+    context: provider
+    l3out: ansible_l3out
+    l3out_tenant: ansible_tenant
+    external_epg: ansible_extepg
+    redistribute: ["bgp"]
+    state: present
+  register: add_external_epg
+
+- name: Modify L4-L7 Device Selection Logical Interface Context by changing redistribute
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *interface_external_epg
+    l3out_tenant:
+    redistribute: ["static"]
+  register: update_external_epg
+
+- name: Remove External EPG
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *interface_external_epg
+    l3out:
+  register: remove_external_epg
+
+- name: Verify external epg
+  ansible.builtin.assert:
+    that:
+    - re_add_bd is changed
+    - add_external_epg is changed
+    - update_external_epg is changed
+    - re_add_bd.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
+    - re_add_bd.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
+    - re_add_bd.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-common/BD-ansible_if_context_bd"
+    - add_external_epg.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToInstP.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extepg"
+    - add_external_epg.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToInstP.attributes.redistribute == "bgp"
+    - update_external_epg.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToInstP.attributes.redistribute == "static"
+    - remove_external_epg.current.0.vnsLIfCtx.children is not defined
 
 # QUERY L4-L7 DEVICE SELECTION INTERFACE CONTEXT
 - name: Query L4-L7 Device Selection Logical Interface Context
@@ -311,7 +387,6 @@
     - query_context is not changed
     - query_context.current.0.vnsLIfCtx.attributes.dn == "uni/tn-ansible_tenant/ldevCtx-c-ansible_contract-g-ansible_graph-n-ansible_node/lIfCtx-c-provider"
     - query_context.current.0.vnsLIfCtx.attributes.connNameOrLbl == "provider"
-    - query_context.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToBD.attributes.tDn == "uni/tn-common/BD-ansible_if_context_bd"
 
 # QUERY ALL L4-L7 DEVICE SELECTION INTERFACE CONTEXTS
 - name: Query all L4-L7 Device Selection Logical Interface Contexts

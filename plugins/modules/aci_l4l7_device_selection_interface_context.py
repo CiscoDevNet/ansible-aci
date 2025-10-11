@@ -97,6 +97,24 @@ options:
     - Indicates whether the context uses a specific rule type for traffic handling.
     - The APIC defaults to C(false) when unset during creation.
     type: bool
+  l3out:
+    description:
+    - The name of the Layer 3 Outside (L3Out) object.
+    type: str
+  l3out_tenant:
+    description:
+    - The tenant in which the L3Out resides.
+    - Omit this variable if both context and L3Out are in the same tenant.
+    type: str
+  external_epg:
+    description:
+    - The name of the External Network Instance Profile (External EPG or ExtEpg) associated with the L3Out.
+    type: str
+  redistribute:
+    description:
+    - A list of routing protocols whose routes should be redistributed.
+    type: list
+    choices: [ bgp, ospf, connected, static ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -307,6 +325,10 @@ def main():
         acl=dict(type="bool"),
         description=dict(type="str"),
         rule_type=dict(type="bool"),
+        l3out=dict(type="str"),
+        l3out_tenant=dict(type="str"),
+        external_epg=dict(type="str"),
+        redistribute=dict(type="list", choices=["bgp", "ospf", "connected", "static"]),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -315,6 +337,16 @@ def main():
             ["state", "absent", ["tenant", "contract", "graph", "node", "context"]],
             ["state", "present", ["tenant", "contract", "graph", "node", "context"]],
         ],
+        required_together=[
+          ('l3out', 'external_epg'),
+        ],
+        mutually_exclusive=[
+          ('bridge_domain', 'l3out'),
+          ('bridge_domain', 'l3out_tenant'),
+          ('bridge_domain', 'external_epg'),
+          ('bridge_domain', 'redistribute'),
+          ('l3out', 'bridge_domain_tenant'),
+        ]
     )
 
     aci = ACIModule(module)
@@ -329,6 +361,10 @@ def main():
     permit_log = aci.boolean(module.params.get("permit_log"))
     bridge_domain = module.params.get("bridge_domain")
     bridge_domain_tenant = module.params.get("bridge_domain_tenant")
+    l3out = module.params.get("l3out")
+    l3out_tenant = module.params.get("l3out_tenant")
+    external_epg = module.params.get("external_epg")
+    redistribute = module.params.get("redistribute")
     logical_device = module.params.get("logical_device")
     logical_interface = module.params.get("logical_interface")
     redirect_policy = module.params.get("redirect_policy")
@@ -358,7 +394,7 @@ def main():
             module_object=context,
             target_filter={"connNameOrLbl": context},
         ),
-        child_classes=["vnsRsLIfCtxToBD", "vnsRsLIfCtxToLIf", "vnsRsLIfCtxToSvcRedirectPol"],
+        child_classes=["vnsRsLIfCtxToBD", "vnsRsLIfCtxToLIf", "vnsRsLIfCtxToSvcRedirectPol", "vnsRsLIfCtxToInstP"],
     )
 
     aci.get_existing()
@@ -372,6 +408,15 @@ def main():
             child_configs.append({"vnsRsLIfCtxToBD": {"attributes": {"tDn": bd_tdn}}})
         else:
             bd_tdn = None
+        if l3out:
+            if l3out_tenant is None:
+                l3out_tenant = tenant
+            if redistribute:
+                redistribute = ",".join(redistribute)
+            l3out_tdn = "uni/tn-{0}/out-{1}/instP-{2}".format(l3out_tenant, l3out, external_epg)
+            child_configs.append({"vnsRsLIfCtxToInstP": {"attributes": {"tDn": l3out_tdn, "redistribute": redistribute}}})
+        else:
+            l3out_tdn = None
         if logical_interface:
             log_intf_tdn = "uni/tn-{0}/lDevVip-{1}/lIf-{2}".format(tenant, logical_device, logical_interface)
             child_configs.append({"vnsRsLIfCtxToLIf": {"attributes": {"tDn": log_intf_tdn}}})
@@ -401,6 +446,13 @@ def main():
                     aci.api_call(
                         "DELETE",
                         "{0}/api/mo/uni/tn-{1}/ldevCtx-c-{2}-g-{3}-n-{4}/lIfCtx-c-{5}/rsLIfCtxToBD.json".format(
+                            aci.base_url, tenant, contract, graph, node, context
+                        ),
+                    )
+                elif child.get("vnsRsLIfCtxToInstP") and child.get("vnsRsLIfCtxToInstP").get("attributes").get("tDn") != l3out_tdn:
+                        aci.api_call(
+                        "DELETE",
+                        "{0}/api/mo/uni/tn-{1}/ldevCtx-c-{2}-g-{3}-n-{4}/lIfCtx-c-{5}/rsLIfCtxToInstP.json".format(
                             aci.base_url, tenant, contract, graph, node, context
                         ),
                     )
