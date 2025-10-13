@@ -114,6 +114,7 @@ options:
     description:
     - A list of routing protocols whose routes should be redistributed.
     type: list
+    elements: str
     choices: [ bgp, ospf, connected, static ]
   state:
     description:
@@ -328,7 +329,7 @@ def main():
         l3out=dict(type="str"),
         l3out_tenant=dict(type="str"),
         external_epg=dict(type="str"),
-        redistribute=dict(type="list", choices=["bgp", "ospf", "connected", "static"]),
+        redistribute=dict(type="list", elements="str", choices=["bgp", "ospf", "connected", "static"]),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -338,15 +339,15 @@ def main():
             ["state", "present", ["tenant", "contract", "graph", "node", "context"]],
         ],
         required_together=[
-          ('l3out', 'external_epg'),
+            ("l3out", "external_epg"),
         ],
         mutually_exclusive=[
-          ('bridge_domain', 'l3out'),
-          ('bridge_domain', 'l3out_tenant'),
-          ('bridge_domain', 'external_epg'),
-          ('bridge_domain', 'redistribute'),
-          ('l3out', 'bridge_domain_tenant'),
-        ]
+            ("bridge_domain", "l3out"),
+            ("bridge_domain", "l3out_tenant"),
+            ("bridge_domain", "external_epg"),
+            ("bridge_domain", "redistribute"),
+            ("l3out", "bridge_domain_tenant"),
+        ],
     )
 
     aci = ACIModule(module)
@@ -450,7 +451,7 @@ def main():
                         ),
                     )
                 elif child.get("vnsRsLIfCtxToInstP") and child.get("vnsRsLIfCtxToInstP").get("attributes").get("tDn") != l3out_tdn:
-                        aci.api_call(
+                    aci.api_call(
                         "DELETE",
                         "{0}/api/mo/uni/tn-{1}/ldevCtx-c-{2}-g-{3}-n-{4}/lIfCtx-c-{5}/rsLIfCtxToInstP.json".format(
                             aci.base_url, tenant, contract, graph, node, context
