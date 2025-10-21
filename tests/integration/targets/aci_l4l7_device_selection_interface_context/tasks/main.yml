@@ -349,6 +349,13 @@
     redistribute: ["static"]
   register: update_external_epg
 
+- name: Modify L4-L7 Device Selection Logical Interface Context by clearing redistribute
+  cisco.aci.aci_l4l7_device_selection_if_context:
+    <<: *interface_external_epg
+    l3out_tenant:
+    redistribute: []
+  register: update_external_epg_clear_redistribute
+
 - name: Remove External EPG
   cisco.aci.aci_l4l7_device_selection_if_context:
     <<: *interface_external_epg
@@ -367,6 +374,7 @@
     - add_external_epg.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToInstP.attributes.tDn == "uni/tn-ansible_tenant/out-ansible_l3out/instP-ansible_extepg"
     - add_external_epg.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToInstP.attributes.redistribute == "bgp"
     - update_external_epg.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToInstP.attributes.redistribute == "static"
+    - update_external_epg_clear_redistribute.current.0.vnsLIfCtx.children.0.vnsRsLIfCtxToInstP.attributes.redistribute == ""
     - remove_external_epg.current.0.vnsLIfCtx.children is not defined
 
 # QUERY L4-L7 DEVICE SELECTION INTERFACE CONTEXT
