@@ -412,7 +412,7 @@ def main():
         if l3out:
             if l3out_tenant is None:
                 l3out_tenant = tenant
-            if redistribute:
+            if redistribute is not None:
                 redistribute = ",".join(redistribute)
             l3out_tdn = "uni/tn-{0}/out-{1}/instP-{2}".format(l3out_tenant, l3out, external_epg)
             child_configs.append({"vnsRsLIfCtxToInstP": {"attributes": {"tDn": l3out_tdn, "redistribute": redistribute}}})
@@ -451,6 +451,8 @@ def main():
                         ),
                     )
                 elif child.get("vnsRsLIfCtxToInstP") and child.get("vnsRsLIfCtxToInstP").get("attributes").get("tDn") != l3out_tdn:
+                    # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class vnsRsLIfCtxToInstP is already attached.
+                    # A seperate delete request to dn of the vnsRsLIfCtxToInstP is needed to remove the object prior to adding to child_configs.
                     aci.api_call(
                         "DELETE",
                         "{0}/api/mo/uni/tn-{1}/ldevCtx-c-{2}-g-{3}-n-{4}/lIfCtx-c-{5}/rsLIfCtxToInstP.json".format(
