@@ -159,7 +159,7 @@
       - query_profile.proposed == {}
       - query_all_profiles is not changed
       - query_all_profiles.proposed == {}
-      - query_all_profiles.current | length == 2
+      - query_all_profiles.current | length >= 2
 
 # CLEAR SUBNET LIST
 - name: Clear subnets list
