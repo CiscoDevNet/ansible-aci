@@ -380,8 +380,6 @@ def main():
     direction = module.params.get("apply_both_direction")
 
     subject_class = "vzSubj"
-    ctr_class = CONTRACT_CLASS_MAPPING[contract_type]["class"]
-    ctr_rn = CONTRACT_CLASS_MAPPING[contract_type]["rn"].format(contract)
 
     base_subject_dict = dict(
         root_class=dict(
@@ -391,8 +389,8 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class=ctr_class,
-            aci_rn=ctr_rn,
+            aci_class=CONTRACT_CLASS_MAPPING[contract_type]["class"],
+            aci_rn=CONTRACT_CLASS_MAPPING[contract_type]["rn"].format(contract),
             module_object=contract,
             target_filter={"name": contract},
         ),
