@@ -381,6 +381,43 @@ releases:
         name: aci_vrf_fallback_route_group
         namespace: ''
     release_date: '2025-07-17'
+  2.13.0:
+    changes:
+      bugfixes:
+        - Added fix to support ansible-core 2.19 to the aci_rest module
+        - Extend allowed ranges for card and subPort in interface input of aci_interface_config
+          module
+        - Modified code to get description value without an explicit default in aci_l4l7_service_graph_template
+      minor_changes:
+        - Added aci_switch_access_config and aci_switch_fabric_config modules to manage
+          Switch Configurations.
+        - Added module to manage the Commissioning and Decommissioning of the Fabric
+          Node
+        - Adding guidelines for Ansible ACI module developement
+        - Change the format from reStructuredText file type to Markdown type.
+        - Changed the format of the documentation developing_aci_modules_guildelines
+          is the new changed file along with sections segrigated in other files.
+      release_summary: 'Release v2.13.0 of the ``ansible-aci`` collection on 2025-10-23.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.12.0.
+
+        '
+      trivial:
+        - Add OoB contract subject support
+        - Correct format of CONTRACT_CLASS_MAPPING in constants.py
+        - Update integration test
+        - Update test task name
+    modules:
+      - description: Manage Switch Access Policy Configuration of Leaf and Spine nodes
+          (infra:NodeConfig).
+        name: aci_switch_access_config
+        namespace: ''
+      - description: Manage Switch Fabric Policy Configuration of Leaf and Spine nodes
+          (fabric:NodeConfig).
+        name: aci_switch_fabric_config
+        namespace: ''
+    release_date: '2025-10-23'
   2.2.0:
     changes:
       bugfixes:
