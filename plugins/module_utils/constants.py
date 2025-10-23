@@ -4,6 +4,8 @@ FILTER_PORT_MAPPING = {"443": "https", "25": "smtp", "80": "http", "53": "dns", 
 
 VALID_ETHER_TYPES = ["arp", "fcoe", "ip", "ipv4", "ipv6", "mac_security", "mpls_ucast", "trill", "unspecified"]
 
+VALID_QOS_CLASSES = ["unspecified", "level1", "level2", "level3", "level4", "level5", "level6"]
+
 # mapping dicts are used to normalize the proposed data to what the APIC expects, which will keep diffs accurate
 ARP_FLAG_MAPPING = dict(arp_reply="reply", arp_request="req", unspecified="unspecified")
 
