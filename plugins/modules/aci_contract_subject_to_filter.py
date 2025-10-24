@@ -21,6 +21,12 @@ options:
     - The name of the contract.
     type: str
     aliases: [ contract_name ]
+  contract_type:
+    description:
+    - The type of contract, either standard or Out of Band (oob).
+    type: str
+    choices: [ standard, oob ]
+    default: standard
   filter:
     description:
     - The name of the Filter to bind to the Subject.
@@ -244,6 +250,7 @@ url:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.constants import CONTRACT_CLASS_MAPPING
 
 
 def main():
@@ -252,6 +259,7 @@ def main():
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),  # Not required for querying all objects
         contract=dict(type="str", aliases=["contract_name"]),  # Not required for querying all objects
+        contract_type=dict(type="str", choices=["standard", "oob"], default="standard"),
         filter=dict(type="str", aliases=["filter_name"]),  # Not required for querying all objects
         subject=dict(type="str", aliases=["contract_subject", "subject_name"]),  # Not required for querying all objects
         # default both because of back-worth compatibility and for determining which config to push
@@ -273,6 +281,7 @@ def main():
     )
 
     contract = module.params.get("contract")
+    contract_type = module.params.get("contract_type")
     filter_name = module.params.get("filter")
     # "none" is kept because of back-worth compatibility, could be deleted and keep only None
     directives = "" if (module.params.get("directives") is None or module.params.get("directives") == "none") else module.params.get("directives")
@@ -291,8 +300,8 @@ def main():
             target_filter={"name": tenant},
         ),
         subclass_1=dict(
-            aci_class="vzBrCP",
-            aci_rn="brc-{0}".format(contract),
+            aci_class=CONTRACT_CLASS_MAPPING[contract_type]["class"],
+            aci_rn=CONTRACT_CLASS_MAPPING[contract_type]["rn"].format(contract),
             module_object=contract,
             target_filter={"name": contract},
         ),
