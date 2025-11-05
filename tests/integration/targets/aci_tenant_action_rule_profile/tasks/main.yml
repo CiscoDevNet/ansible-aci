@@ -2,6 +2,7 @@
 # Copyright: (c) 2023, Dag Wieers (@dagwieers)
 # Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+# Copyright: (c) 2025, Shreyas Srish (@shrsr) <ssrish@cisco.com>
 
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -38,6 +39,61 @@
     cisco.aci.aci_tenant: &aci_tenant_present
       <<: *aci_info
       tenant: ansible_test
+      state: present
+
+  - name: Create VRF for L3Out
+    cisco.aci.aci_vrf:
+      <<: *aci_tenant_present
+      vrf: ansible_vrf
+      state: present
+
+  - name: Create L3 Domain for L3Out
+    cisco.aci.aci_domain:
+      <<: *aci_info
+      domain: ansible_dom
+      domain_type: l3dom
+      state: present
+
+  - name: Create L3Out for policy tag tests
+    cisco.aci.aci_l3out:
+      <<: *aci_tenant_present
+      l3out: ansible_l3out
+      domain: ansible_dom
+      vrf: ansible_vrf
+      state: present
+
+  - name: Create External EPG for policy tag tests
+    cisco.aci.aci_l3out_extepg:
+      <<: *aci_tenant_present
+      l3out: ansible_l3out
+      extepg: ansible_extepg
+      state: present
+
+  - name: Create External EPG 2 for policy tag tests
+    cisco.aci.aci_l3out_extepg:
+      <<: *aci_tenant_present
+      l3out: ansible_l3out
+      extepg: ansible_extepg2
+      state: present
+
+  - name: Create Application Profile for ESG policy tag tests
+    cisco.aci.aci_ap:
+      <<: *aci_tenant_present
+      ap: ansible_ap
+      state: present
+
+  - name: Create VRF for ESG
+    cisco.aci.aci_vrf:
+      <<: *aci_tenant_present
+      vrf: ansible_vrf_esg
+      state: present
+
+  - name: Create ESG for policy tag tests
+    cisco.aci.aci_esg:
+      <<: *aci_tenant_present
+      ap: ansible_ap
+      esg: ansible_esg
+      vrf: ansible_vrf_esg
       state: present
 
   - name: Ensure first action rule profile does not exist
@@ -79,6 +135,12 @@
       set_next_hop: 1.1.1.2
       state: absent
 
+  - name: Ensure third action rule profile does not exist (for new children tests)
+    cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_3_absent
+      <<: *aci_tenant_present
+      name: anstest_3
+      state: absent
+
   - name: Create first action rule profile (check_mode)
     cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_present
       <<: *aci_tenant_action_rule_profile_absent
@@ -118,18 +180,18 @@
         - cm_add_tenant_action_rule_profile_1.current == []
         - nm_add_tenant_action_rule_profile_1 is changed
         - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.attributes.name == "anstest"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.0.rtctrlSetWeight.attributes.weight == "100"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.halfLife == "10"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.maxSuppressTime == "100"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.reuse == "1"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.suppress == "10"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.2.rtctrlSetRtMetricType.attributes.metricType == "ospf-type1"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.3.rtctrlSetNh.attributes.addr == "1.1.1.1"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.4.rtctrlSetPref.attributes.localPref == "100"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.5.rtctrlSetRtMetric.attributes.metric == "100"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.community == "no-advertise"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.setCriteria == "replace"
-        - nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children.7.rtctrlSetTag.attributes.tag == "100"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetWeight', 'defined') | map(attribute='rtctrlSetWeight') | first).attributes.weight == "100"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetDamp', 'defined') | map(attribute='rtctrlSetDamp') | first).attributes.halfLife == "10"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetDamp', 'defined') | map(attribute='rtctrlSetDamp') | first).attributes.maxSuppressTime == "100"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetDamp', 'defined') | map(attribute='rtctrlSetDamp') | first).attributes.reuse == "1"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetDamp', 'defined') | map(attribute='rtctrlSetDamp') | first).attributes.suppress == "10"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetRtMetricType', 'defined') | map(attribute='rtctrlSetRtMetricType') | first).attributes.metricType == "ospf-type1"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetNh', 'defined') | map(attribute='rtctrlSetNh') | first).attributes.addr == "1.1.1.1"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPref', 'defined') | map(attribute='rtctrlSetPref') | first).attributes.localPref == "100"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetRtMetric', 'defined') | map(attribute='rtctrlSetRtMetric') | first).attributes.metric == "100"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetComm', 'defined') | map(attribute='rtctrlSetComm') | first).attributes.community == "no-advertise"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetComm', 'defined') | map(attribute='rtctrlSetComm') | first).attributes.setCriteria == "replace"
+        - (nm_add_tenant_action_rule_profile_1.current.0.rtctrlAttrP.children | selectattr('rtctrlSetTag', 'defined') | map(attribute='rtctrlSetTag') | first).attributes.tag == "100"
         - idempotency_add_tenant_action_rule_profile_1 is not changed
 
   - name: Asserts for creation tasks for action rule profile 2 - APIC version >= 5.0
@@ -138,9 +200,9 @@
       that:
         - nm_add_tenant_action_rule_profile_2_5 is changed
         - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.attributes.name == "anstest_2"
-        - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children.0.rtctrlSetRedistMultipath.attributes.descr == ""
-        - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children.1.rtctrlSetNhUnchanged.attributes.descr == ""
-        - nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children.2.rtctrlSetNh.attributes.addr == "1.1.1.2"
+        - (nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children | selectattr('rtctrlSetRedistMultipath', 'defined') | map(attribute='rtctrlSetRedistMultipath') | first).attributes.descr == ""
+        - (nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children | selectattr('rtctrlSetNhUnchanged', 'defined') | map(attribute='rtctrlSetNhUnchanged') | first).attributes.descr == ""
+        - (nm_add_tenant_action_rule_profile_2_5.current.0.rtctrlAttrP.children | selectattr('rtctrlSetNh', 'defined') | map(attribute='rtctrlSetNh') | first).attributes.addr == "1.1.1.2"
 
   - name: Asserts for creation tasks for action rule profile 2 - APIC version < 5.0
     when: version.current.0.topSystem.attributes.version is version('5', '<')
@@ -148,40 +210,447 @@
       that:
         - nm_add_tenant_action_rule_profile_2 is changed
         - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.attributes.name == "anstest_2"
-        - nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children.0.rtctrlSetNh.attributes.addr == "1.1.1.2"
+        - (nm_add_tenant_action_rule_profile_2.current.0.rtctrlAttrP.children | selectattr('rtctrlSetNh', 'defined') | map(attribute='rtctrlSetNh') | first).attributes.addr == "1.1.1.2"
 
-  - name: Query all action rule profiles
+  # NEW TESTS FOR set_communities
+  - name: Create action rule profile with set_communities (check_mode)
+    cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_3_communities
+      <<: *aci_tenant_action_rule_profile_3_absent
+      set_communities:
+        - community: no-advertise
+          description: Test community 1
+        - community: no-export
+          description: Test community 2
+        - community: "regular:as2-nn2:4:15"
+          description: Test extended community
+      state: present
+    check_mode: true
+    register: cm_add_communities
+
+  - name: Create action rule profile with set_communities (normal_mode)
     cisco.aci.aci_tenant_action_rule_profile:
-      <<: *aci_info
-      state: query
-    register: query_all_tenant_action_rule_profile
+      <<: *aci_tenant_action_rule_profile_3_communities
+    register: nm_add_communities
 
-  - name: Query first action rule profile
+  - name: Create action rule profile with set_communities again - testing idempotency
     cisco.aci.aci_tenant_action_rule_profile:
-      <<: *aci_tenant_action_rule_profile_present
-      state: query
-    register: query_first_tenant_action_rule_profile
+      <<: *aci_tenant_action_rule_profile_3_communities
+    register: idempotency_add_communities
 
-  - name: Asserts for query tasks
+  - name: Extract community objects
+    ansible.builtin.set_fact:
+      communities: "{{ nm_add_communities.current.0.rtctrlAttrP.children | selectattr('rtctrlSetAddComm', 'defined') | map(attribute='rtctrlSetAddComm') | list }}"
+
+  - name: Asserts for set_communities creation
     ansible.builtin.assert:
       that:
-        - query_all_tenant_action_rule_profile is not changed
-        - query_all_tenant_action_rule_profile.current | length >= 2
-        - '"class/rtctrlAttrP.json" in query_all_tenant_action_rule_profile.url'
-        - query_first_tenant_action_rule_profile is not changed
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.attributes.name == "anstest"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.0.rtctrlSetWeight.attributes.weight == "100"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.halfLife == "10"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.maxSuppressTime == "100"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.reuse == "1"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.1.rtctrlSetDamp.attributes.suppress == "10"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.2.rtctrlSetRtMetricType.attributes.metricType == "ospf-type1"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.3.rtctrlSetNh.attributes.addr == "1.1.1.1"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.4.rtctrlSetPref.attributes.localPref == "100"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.5.rtctrlSetRtMetric.attributes.metric == "100"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.community == "no-advertise"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.6.rtctrlSetComm.attributes.setCriteria == "replace"
-        - query_first_tenant_action_rule_profile.current.0.rtctrlAttrP.children.7.rtctrlSetTag.attributes.tag == "100"
+        - cm_add_communities is changed
+        - nm_add_communities is changed
+        - nm_add_communities.current.0.rtctrlAttrP.attributes.name == "anstest_3"
+        - communities | length == 3
+        - communities | selectattr('attributes.community', 'equalto', 'no-advertise') | list | length == 1
+        - (communities | selectattr('attributes.community', 'equalto', 'no-advertise') | first).attributes.descr == "Test community 1"
+        - communities | selectattr('attributes.community', 'equalto', 'no-export') | list | length == 1
+        - (communities | selectattr('attributes.community', 'equalto', 'no-export') | first).attributes.descr == "Test community 2"
+        - communities | selectattr('attributes.community', 'equalto', 'regular:as2-nn2:4:15') | list | length == 1
+        - (communities | selectattr('attributes.community', 'equalto', 'regular:as2-nn2:4:15') | first).attributes.descr == "Test extended community"
+        - idempotency_add_communities is not changed
+
+  - name: Query action rule profile with set_communities
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_communities
+      state: query
+    register: query_communities
+
+  - name: Extract queried community objects
+    ansible.builtin.set_fact:
+      queried_communities: "{{ query_communities.current.0.rtctrlAttrP.children | selectattr('rtctrlSetAddComm', 'defined') | map(attribute='rtctrlSetAddComm') | list }}"
+
+  - name: Asserts for set_communities query
+    ansible.builtin.assert:
+      that:
+        - query_communities is not changed
+        - queried_communities | length == 3
+        - queried_communities | selectattr('attributes.community', 'equalto', 'no-advertise') | list | length == 1
+        - queried_communities | selectattr('attributes.community', 'equalto', 'no-export') | list | length == 1
+        - queried_communities | selectattr('attributes.community', 'equalto', 'regular:as2-nn2:4:15') | list | length == 1
+
+  # UPDATE TEST - Remove one community
+  - name: Remove one community from set_communities
+    cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_3_communities_updated
+      <<: *aci_tenant_action_rule_profile_3_absent
+      set_communities:
+        - community: no-advertise
+          description: Test community 1
+        - community: no-export
+          description: Test community 2
+      state: present
+    register: nm_remove_one_community
+
+  - name: Query after removing one community
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_communities_updated
+      state: query
+    register: query_after_community_removal
+
+  - name: Extract communities after removal
+    ansible.builtin.set_fact:
+      communities_after_removal: "{{ query_after_community_removal.current.0.rtctrlAttrP.children | selectattr('rtctrlSetAddComm', 'defined') | map(attribute='rtctrlSetAddComm') | list }}"
+
+  - name: Asserts for community removal
+    ansible.builtin.assert:
+      that:
+        - nm_remove_one_community is changed
+        - communities_after_removal | length == 2
+        - communities_after_removal | selectattr('attributes.community', 'equalto', 'no-advertise') | list | length == 1
+        - communities_after_removal | selectattr('attributes.community', 'equalto', 'no-export') | list | length == 1
+        - communities_after_removal | selectattr('attributes.community', 'equalto', 'regular:as2-nn2:4:15') | list | length == 0
+
+# NEW TESTS FOR set_as_path
+  - name: Update action rule profile with set_as_path prepend
+    cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_3_as_path
+      <<: *aci_tenant_action_rule_profile_3_absent
+      set_communities:
+        - community: no-advertise
+          description: Test community 1
+        - community: no-export
+          description: Test community 2
+      set_as_path:
+        - criteria: prepend
+          asns:
+            - asn: "65001"
+              order: 0
+            - asn: "65002"
+              order: 1
+            - asn: "65003"
+              order: 2
+        - criteria: prepend-last-as
+          last_num: 4
+      state: present
+    register: nm_add_as_path
+
+  - name: Update action rule profile with set_as_path prepend again - testing idempotency
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_as_path
+    register: idempotency_add_as_path
+
+  - name: Extract AS path objects
+    ansible.builtin.set_fact:
+      as_paths: "{{ nm_add_as_path.current.0.rtctrlAttrP.children | selectattr('rtctrlSetASPath', 'defined') | map(attribute='rtctrlSetASPath') | list }}"
+
+  - name: Separate AS paths by criteria
+    ansible.builtin.set_fact:
+      prepend_as_path: "{{ as_paths | selectattr('attributes.criteria', 'defined') | selectattr('attributes.criteria', 'equalto', 'prepend') | list | first | default({}) }}"
+      prepend_last_as_path: "{{ as_paths | selectattr('attributes.criteria', 'defined') | selectattr('attributes.criteria', 'equalto', 'prepend-last-as') | list | first | default({}) }}"
+
+  - name: Extract ASN children from prepend
+    ansible.builtin.set_fact:
+      asn_children: "{{ prepend_as_path.children | default([]) | selectattr('rtctrlSetASPathASN', 'defined') | map(attribute='rtctrlSetASPathASN') | list }}"
+
+  - name: Asserts for set_as_path creation
+    ansible.builtin.assert:
+      that:
+        - nm_add_as_path is changed
+        - as_paths | length == 2
+        # Verify prepend AS path
+        - prepend_as_path | length > 0
+        - asn_children | length == 3
+        - asn_children | selectattr('attributes.asn', 'equalto', '65001') | list | length == 1
+        - (asn_children | selectattr('attributes.asn', 'equalto', '65001') | first).attributes.order == "0"
+        - asn_children | selectattr('attributes.asn', 'equalto', '65002') | list | length == 1
+        - (asn_children | selectattr('attributes.asn', 'equalto', '65002') | first).attributes.order == "1"
+        - asn_children | selectattr('attributes.asn', 'equalto', '65003') | list | length == 1
+        - (asn_children | selectattr('attributes.asn', 'equalto', '65003') | first).attributes.order == "2"
+        # Verify prepend-last-as AS path
+        - prepend_last_as_path | length > 0
+        - prepend_last_as_path.attributes.criteria == "prepend-last-as"
+        - prepend_last_as_path.attributes.lastnum == "4"
+        - idempotency_add_as_path is not changed
+
+  - name: Query action rule profile with set_as_path
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_as_path
+      state: query
+    register: query_as_path
+
+  - name: Extract queried AS path objects
+    ansible.builtin.set_fact:
+      queried_as_paths: "{{ query_as_path.current.0.rtctrlAttrP.children | selectattr('rtctrlSetASPath', 'defined') | map(attribute='rtctrlSetASPath') | list }}"
+
+  - name: Separate queried AS paths
+    ansible.builtin.set_fact:
+      queried_prepend: "{{ queried_as_paths | selectattr('attributes.criteria', 'defined') | selectattr('attributes.criteria', 'equalto', 'prepend') | list | first | default({}) }}"
+      queried_prepend_last_as: "{{ queried_as_paths | selectattr('attributes.criteria', 'defined') | selectattr('attributes.criteria', 'equalto', 'prepend-last-as') | list }}"
+
+  - name: Extract ASN children from queried prepend
+    ansible.builtin.set_fact:
+      queried_asn_children: "{{ queried_prepend.children | default([]) | selectattr('rtctrlSetASPathASN', 'defined') | map(attribute='rtctrlSetASPathASN') | list }}"
+
+  - name: Asserts for set_as_path query
+    ansible.builtin.assert:
+      that:
+        - query_as_path is not changed
+        - queried_as_paths | length == 2
+        # Verify prepend exists
+        - queried_prepend | length > 0
+        - queried_asn_children | length == 3
+        - queried_asn_children | selectattr('attributes.asn', 'equalto', '65001') | list | length == 1
+        - queried_asn_children | selectattr('attributes.asn', 'equalto', '65002') | list | length == 1
+        - queried_asn_children | selectattr('attributes.asn', 'equalto', '65003') | list | length == 1
+        # Verify prepend-last-as exists
+        - queried_prepend_last_as | length == 1
+        - queried_prepend_last_as[0].attributes.criteria == "prepend-last-as"
+        - queried_prepend_last_as[0].attributes.lastnum == "4"
+
+  # UPDATE TEST - Remove one ASN
+  - name: Remove one ASN from prepend
+    cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_3_as_path_updated
+      <<: *aci_tenant_action_rule_profile_3_absent
+      set_communities:
+        - community: no-advertise
+          description: Test community 1
+        - community: no-export
+          description: Test community 2
+      set_as_path:
+        - criteria: prepend
+          asns:
+            - asn: "65001"
+              order: 0
+            - asn: "65002"
+              order: 1
+        - criteria: prepend-last-as
+          last_num: 4
+      state: present
+    register: nm_remove_one_asn
+
+  - name: Query after removing one ASN
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_as_path_updated
+      state: query
+    register: query_after_asn_removal
+
+  - name: Extract AS paths after ASN removal
+    ansible.builtin.set_fact:
+      as_paths_after_removal: "{{ query_after_asn_removal.current.0.rtctrlAttrP.children | selectattr('rtctrlSetASPath', 'defined') | map(attribute='rtctrlSetASPath') | list }}"
+
+  - name: Extract prepend after removal
+    ansible.builtin.set_fact:
+      prepend_after_removal: "{{ as_paths_after_removal | selectattr('attributes.criteria', 'defined') | selectattr('attributes.criteria', 'equalto', 'prepend') | list | first | default({}) }}"
+
+  - name: Extract ASN children after removal
+    ansible.builtin.set_fact:
+      asn_children_after_removal: "{{ prepend_after_removal.children | default([]) | selectattr('rtctrlSetASPathASN', 'defined') | map(attribute='rtctrlSetASPathASN') | list }}"
+
+  - name: Asserts for ASN removal
+    ansible.builtin.assert:
+      that:
+        - nm_remove_one_asn is changed
+        - as_paths_after_removal | length == 2
+        - asn_children_after_removal | length == 2
+        - asn_children_after_removal | selectattr('attributes.asn', 'equalto', '65001') | list | length == 1
+        - asn_children_after_removal | selectattr('attributes.asn', 'equalto', '65002') | list | length == 1
+        - asn_children_after_removal | selectattr('attributes.asn', 'equalto', '65003') | list | length == 0
+
+  # NEW TESTS FOR set_policy_tag - APIC version >= 6.0
+  - name: Policy tag tests
+    when: version.current.0.topSystem.attributes.version is version('6.1', '>=')
+    block:
+      # NEW TESTS FOR set_policy_tag with External EPG only
+      - name: Update action rule profile with set_policy_tag (External EPG only)
+        cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_3_policy_tag_extepg
+          <<: *aci_tenant_action_rule_profile_3_absent
+          set_communities:
+            - community: no-advertise
+              description: Test community 1
+          set_as_path:
+            - criteria: prepend
+              asns:
+                - asn: "65001"
+                  order: 0
+          set_policy_tag:
+            l3out: ansible_l3out
+            external_epg: ansible_extepg
+          state: present
+        register: nm_add_policy_tag_extepg
+
+      - name: Update action rule profile with set_policy_tag (External EPG only) again - testing idempotency
+        cisco.aci.aci_tenant_action_rule_profile:
+          <<: *aci_tenant_action_rule_profile_3_policy_tag_extepg
+        register: idempotency_add_policy_tag_extepg
+
+      - name: Extract policy tag object
+        ansible.builtin.set_fact:
+          policy_tag_extepg: "{{ nm_add_policy_tag_extepg.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | map(attribute='rtctrlSetPolicyTag') | first }}"
+
+      - name: Extract External EPG relationship
+        ansible.builtin.set_fact:
+          extepg_relationship: "{{ policy_tag_extepg.children | selectattr('rtctrlRsSetPolicyTagToInstP', 'defined') | map(attribute='rtctrlRsSetPolicyTagToInstP') | list }}"
+
+      - name: Asserts for set_policy_tag External EPG only creation
+        ansible.builtin.assert:
+          that:
+            - nm_add_policy_tag_extepg is changed
+            - nm_add_policy_tag_extepg.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | list | length == 1
+            - extepg_relationship | length == 1
+            - extepg_relationship[0].attributes.tDn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extepg"
+            - policy_tag_extepg.children | selectattr('rtctrlRsSetPolicyTagToESg', 'defined') | list | length == 0
+            - idempotency_add_policy_tag_extepg is not changed
+
+      - name: Query action rule profile with set_policy_tag (External EPG only)
+        cisco.aci.aci_tenant_action_rule_profile:
+          <<: *aci_tenant_action_rule_profile_3_policy_tag_extepg
+          state: query
+        register: query_policy_tag_extepg
+
+      - name: Extract queried policy tag
+        ansible.builtin.set_fact:
+          queried_policy_tag_extepg: "{{ query_policy_tag_extepg.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | map(attribute='rtctrlSetPolicyTag') | first }}"
+
+      - name: Asserts for set_policy_tag External EPG only query
+        ansible.builtin.assert:
+          that:
+            - query_policy_tag_extepg is not changed
+            - query_policy_tag_extepg.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | list | length == 1
+            - queried_policy_tag_extepg.children | selectattr('rtctrlRsSetPolicyTagToInstP', 'defined') | list | length == 1
+            - (queried_policy_tag_extepg.children | selectattr('rtctrlRsSetPolicyTagToInstP', 'defined') | map(attribute='rtctrlRsSetPolicyTagToInstP') | first).attributes.tDn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extepg"
+            - queried_policy_tag_extepg.children | selectattr('rtctrlRsSetPolicyTagToESg', 'defined') | list | length == 0
+
+      # NEW TESTS FOR set_policy_tag with ESG only
+      - name: Update action rule profile with set_policy_tag (ESG only - replaces External EPG)
+        cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_3_policy_tag_esg
+          <<: *aci_tenant_action_rule_profile_3_absent
+          set_communities:
+            - community: no-advertise
+              description: Test community 1
+          set_as_path:
+            - criteria: prepend-last-as
+              last_num: 3
+          set_policy_tag:
+            ap: ansible_ap
+            esg: ansible_esg
+          state: present
+        register: nm_add_policy_tag_esg
+
+      - name: Update action rule profile with set_policy_tag (ESG only) again - testing idempotency
+        cisco.aci.aci_tenant_action_rule_profile:
+          <<: *aci_tenant_action_rule_profile_3_policy_tag_esg
+        register: idempotency_add_policy_tag_esg
+
+      - name: Extract policy tag ESG object
+        ansible.builtin.set_fact:
+          policy_tag_esg: "{{ nm_add_policy_tag_esg.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | map(attribute='rtctrlSetPolicyTag') | first }}"
+
+      - name: Extract ESG relationship
+        ansible.builtin.set_fact:
+          esg_relationship: "{{ policy_tag_esg.children | selectattr('rtctrlRsSetPolicyTagToESg', 'defined') | map(attribute='rtctrlRsSetPolicyTagToESg') | list }}"
+
+      - name: Asserts for set_policy_tag ESG only creation
+        ansible.builtin.assert:
+          that:
+            - nm_add_policy_tag_esg is changed
+            - nm_add_policy_tag_esg.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | list | length == 1
+            - esg_relationship | length == 1
+            - esg_relationship[0].attributes.tDn == "uni/tn-ansible_test/ap-ansible_ap/esg-ansible_esg"
+            - policy_tag_esg.children | selectattr('rtctrlRsSetPolicyTagToInstP', 'defined') | list | length == 0
+            - idempotency_add_policy_tag_esg is not changed
+
+      - name: Query action rule profile with set_policy_tag (ESG only)
+        cisco.aci.aci_tenant_action_rule_profile:
+          <<: *aci_tenant_action_rule_profile_3_policy_tag_esg
+          state: query
+        register: query_policy_tag_esg
+
+      - name: Extract queried ESG policy tag
+        ansible.builtin.set_fact:
+          queried_policy_tag_esg: "{{ query_policy_tag_esg.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | map(attribute='rtctrlSetPolicyTag') | first }}"
+
+      - name: Asserts for set_policy_tag ESG only query
+        ansible.builtin.assert:
+          that:
+            - query_policy_tag_esg is not changed
+            - query_policy_tag_esg.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | list | length == 1
+            - queried_policy_tag_esg.children | selectattr('rtctrlRsSetPolicyTagToESg', 'defined') | list | length == 1
+            - (queried_policy_tag_esg.children | selectattr('rtctrlRsSetPolicyTagToESg', 'defined') | map(attribute='rtctrlRsSetPolicyTagToESg') | first).attributes.tDn == "uni/tn-ansible_test/ap-ansible_ap/esg-ansible_esg"
+            - queried_policy_tag_esg.children | selectattr('rtctrlRsSetPolicyTagToInstP', 'defined') | list | length == 0
+
+  # UPDATE TEST - Switch from ESG back to External EPG
+  - name: Switch from ESG to External EPG
+    cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_3_switch_to_extepg
+      <<: *aci_tenant_action_rule_profile_3_absent
+      set_communities:
+        - community: no-advertise
+          description: Test community 1
+      set_as_path:
+        - criteria: prepend-last-as
+          last_num: 3
+      set_policy_tag:
+        l3out: ansible_l3out
+        external_epg: ansible_extepg
+      state: present
+    register: nm_switch_to_extepg
+
+  - name: Query after switching to External EPG
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_switch_to_extepg
+      state: query
+    register: query_after_switch
+
+  - name: Extract policy tag after switch
+    ansible.builtin.set_fact:
+      policy_tag_after_switch: "{{ query_after_switch.current.0.rtctrlAttrP.children | selectattr('rtctrlSetPolicyTag', 'defined') | map(attribute='rtctrlSetPolicyTag') | first }}"
+
+  - name: Extract relationships after switch
+    ansible.builtin.set_fact:
+      extepg_rel_after_switch: "{{ policy_tag_after_switch.children | selectattr('rtctrlRsSetPolicyTagToInstP', 'defined') | map(attribute='rtctrlRsSetPolicyTagToInstP') | list }}"
+      esg_rel_after_switch: "{{ policy_tag_after_switch.children | selectattr('rtctrlRsSetPolicyTagToESg', 'defined') | list }}"
+
+  - name: Asserts for switching from ESG to External EPG
+    ansible.builtin.assert:
+      that:
+        - nm_switch_to_extepg is changed
+        - extepg_rel_after_switch | length == 1
+        - extepg_rel_after_switch[0].attributes.tDn == "uni/tn-ansible_test/out-ansible_l3out/instP-ansible_extepg"
+        - esg_rel_after_switch | length == 0
+
+  # DELETE TESTS FOR NEW CHILDREN
+  - name: Delete set_communities from action rule profile
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_switch_to_extepg
+      set_communities: []
+    register: nm_delete_communities
+
+  - name: Asserts for set_communities deletion
+    ansible.builtin.assert:
+      that:
+        - nm_delete_communities is changed
+        - nm_delete_communities.current.0.rtctrlAttrP.children | selectattr('rtctrlSetAddComm', 'defined') | list | length == 0
+
+  - name: Delete set_as_path from action rule profile
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_switch_to_extepg
+      set_communities: []
+      set_as_path: []
+    register: nm_delete_as_path
+
+  - name: Asserts for set_as_path deletion
+    ansible.builtin.assert:
+      that:
+        - nm_delete_as_path is changed
+        - nm_delete_as_path.current.0.rtctrlAttrP.children | selectattr('rtctrlSetASPath', 'defined') | list | length == 0
+
+  - name: Delete all policy tags
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_switch_to_extepg
+      set_communities: []
+      set_as_path: []
+      set_policy_tag: {}
+    register: nm_delete_all_policy_tags
+
+  - name: Asserts for all policy tags deletion
+    ansible.builtin.assert:
+      that:
+        - nm_delete_all_policy_tags is changed
+        - nm_delete_all_policy_tags.current.0.rtctrlAttrP.children is undefined
 
   - name: Delete children for first action rule profile (check_mode)
     cisco.aci.aci_tenant_action_rule_profile: &aci_tenant_action_rule_profile_children_deleted
@@ -279,6 +748,12 @@
       state: absent
     register: nm_delete_tenant_action_rule_profile_2
 
+  - name: Delete third action rule profile
+    cisco.aci.aci_tenant_action_rule_profile:
+      <<: *aci_tenant_action_rule_profile_3_absent
+      state: absent
+    register: nm_delete_tenant_action_rule_profile_3
+
   - name: Asserts for deletion tasks for action rule profile 1
     ansible.builtin.assert:
       that:
@@ -305,6 +780,13 @@
         - nm_delete_tenant_action_rule_profile_2 is changed
         - nm_delete_tenant_action_rule_profile_2.previous != []
         - nm_delete_tenant_action_rule_profile_2.current == []
+
+  - name: Asserts for deletion tasks for action rule profile 3
+    ansible.builtin.assert:
+      that:
+        - nm_delete_tenant_action_rule_profile_3 is changed
+        - nm_delete_tenant_action_rule_profile_3.previous != []
+        - nm_delete_tenant_action_rule_profile_3.current == []
 
   - name: Delete tenant - cleanup before ending tests
     cisco.aci.aci_tenant:
