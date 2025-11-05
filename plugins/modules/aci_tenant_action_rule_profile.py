@@ -4,6 +4,7 @@
 # Copyright: (c) 2023, Dag Wieers (@dagwieers)
 # Copyright: (c) 2023, Tim Cragg (@timcragg) <tcragg@cisco.com>
 # Copyright: (c) 2023, Gaspard Micol (@gmicol) <gmicol@cisco.com>
+# Copyright: (c) 2025, Shreyas Srish (@shrsr) <ssrish@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -113,6 +114,91 @@ options:
     - The set action rule based on weight.
     - To delete this attribute, pass an empty string.
     type: str
+  set_communities:
+    description:
+    - List of communities to add to the action rule profile.
+    - To delete all communities, pass an empty list.
+    type: list
+    elements: dict
+    suboptions:
+      community:
+        description:
+        - The community value (e.g., no-advertise, no-export, or regular:as2-nn2:4:15).
+        type: str
+        required: true
+      description:
+        description:
+        - Description for the community.
+        type: str
+        aliases: [ descr ]
+  set_as_path:
+    description:
+    - List of AS path prepend configurations.
+    - To delete all AS path configurations, pass an empty list.
+    type: list
+    elements: dict
+    suboptions:
+      criteria:
+        description:
+        - The AS path criteria.
+        type: str
+        choices: [ prepend, prepend-last-as ]
+        default: prepend
+      last_num:
+        description:
+        - Number of times to prepend the last AS.
+        - Only applicable when criteria is prepend-last-as.
+        type: int
+      asns:
+        description:
+        - List of ASNs to prepend.
+        - Only applicable when criteria is prepend.
+        type: list
+        elements: dict
+        suboptions:
+          asn:
+            description:
+            - The ASN to prepend.
+            type: str
+            required: true
+          order:
+            description:
+            - The order of the ASN in the prepend list.
+            type: int
+            required: true
+  set_policy_tag:
+    description:
+    - The set action rule based on policy tag (External EPG or ESG).
+    - To delete this attribute, pass an empty dictionary.
+    - Either External EPG (l3out and external_epg) or ESG (ap and esg) must be configured, but not both.
+    type: dict
+    suboptions:
+      l3out:
+        description:
+        - The name of the L3Out.
+        - Required together with C(external_epg).
+        - Mutually exclusive with C(ap) and C(esg).
+        type: str
+      external_epg:
+        description:
+        - The name of the External EPG.
+        - Required together with C(l3out).
+        - Mutually exclusive with C(ap) and C(esg).
+        type: str
+        aliases: [ extepg, inst_p ]
+      ap:
+        description:
+        - The name of the Application Profile.
+        - Required together with C(esg).
+        - Mutually exclusive with C(l3out) and C(external_epg).
+        type: str
+        aliases: [ app_profile ]
+      esg:
+        description:
+        - The name of the Endpoint Security Group (ESG).
+        - Required together with C(ap).
+        - Mutually exclusive with C(l3out) and C(external_epg).
+        type: str
   description:
     description:
     - The description for the action rule profile.
@@ -145,10 +231,11 @@ author:
 - Dag Wieers (@dagwieers)
 - Tim Cragg (@timcragg)
 - Gaspard Micol (@gmicol)
+- Shreyas Srish (@shrsr)
 """
 
 EXAMPLES = r"""
-- name: Create a action rule profile
+- name: Create a action rule profile (with External EPG policy tag)
   cisco.aci.aci_tenant_action_rule_profile:
     host: apic
     username: admin
@@ -170,6 +257,50 @@ EXAMPLES = r"""
       reuse: 1
       suppress: 10
       max_suppress_time: 100
+    set_communities:
+      - community: no-advertise
+        description: test
+      - community: no-export
+        description: test2
+    set_as_path:
+      - criteria: prepend
+        asns:
+          - asn: "65001"
+            order: 0
+          - asn: "65002"
+            order: 1
+      - criteria: prepend-last-as
+        last_num: 4
+    set_policy_tag:
+      l3out: test
+      external_epg: test
+    state: present
+  delegate_to: localhost
+
+- name: Create a action rule profile (with ESG policy tag)
+  cisco.aci.aci_tenant_action_rule_profile:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    action_rule: my_action_rule
+    tenant: Test
+    set_communities:
+      - community: no-advertise
+        description: test
+      - community: no-export
+        description: test2
+    set_as_path:
+      - criteria: prepend
+        asns:
+          - asn: "65001"
+            order: 0
+          - asn: "65002"
+            order: 1
+      - criteria: prepend-last-as
+        last_num: 4
+    set_policy_tag:
+      ap: ap
+      esg: test
     state: present
   delegate_to: localhost
 
@@ -189,10 +320,13 @@ EXAMPLES = r"""
     multipath: false
     set_community: {}
     set_dampening: {}
+    set_communities: []
+    set_as_path: []
+    set_policy_tag: {}
     state: present
   delegate_to: localhost
 
-- name: Delete a action rule profile
+- name: Delete an action rule profile
   cisco.aci.aci_tenant_action_rule_profile:
     host: apic
     username: admin
@@ -355,6 +489,49 @@ def main():
         set_metric_type=dict(type="str", choices=["ospf_type_1", "ospf_type_2", ""]),
         set_route_tag=dict(type="str"),
         set_weight=dict(type="str"),
+        set_communities=dict(
+            type="list",
+            elements="dict",
+            options=dict(
+                community=dict(type="str", required=True),
+                description=dict(type="str", aliases=["descr"]),
+            ),
+        ),
+        set_as_path=dict(
+            type="list",
+            elements="dict",
+            options=dict(
+                criteria=dict(type="str", choices=["prepend", "prepend-last-as"], default="prepend"),
+                last_num=dict(type="int"),
+                asns=dict(
+                    type="list",
+                    elements="dict",
+                    options=dict(
+                        asn=dict(type="str", required=True),
+                        order=dict(type="int", required=True),
+                    ),
+                ),
+            ),
+        ),
+        set_policy_tag=dict(
+            type="dict",
+            options=dict(
+                l3out=dict(type="str"),
+                external_epg=dict(type="str", aliases=["extepg", "inst_p"]),
+                ap=dict(type="str", aliases=["app_profile"]),
+                esg=dict(type="str"),
+            ),
+            mutually_exclusive=[
+                ["l3out", "ap"],
+                ["l3out", "esg"],
+                ["external_epg", "ap"],
+                ["external_epg", "esg"],
+            ],
+            required_together=[
+                ["l3out", "external_epg"],
+                ["ap", "esg"],
+            ],
+        ),
         description=dict(type="str", aliases=["descr"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         name_alias=dict(type="str"),
@@ -401,6 +578,15 @@ def main():
         if attribute.get("attribute_input") is not None:
             child_classes[class_name] = attribute
 
+    # Add new child classes which do not exist in APIC version 5.8/6.0 and prior for list-based configurations
+    list_child_classes = []
+    if module.params.get("set_communities") is not None:
+        list_child_classes.append("rtctrlSetAddComm")
+    if module.params.get("set_as_path") is not None:
+        list_child_classes.append("rtctrlSetASPath")
+    if module.params.get("set_policy_tag") is not None:
+        list_child_classes.append("rtctrlSetPolicyTag")
+
     aci.construct_url(
         root_class=dict(
             aci_class="fvTenant",
@@ -414,13 +600,15 @@ def main():
             module_object=action_rule,
             target_filter={"name": action_rule},
         ),
-        child_classes=list(child_classes.keys()),
+        child_classes=list(child_classes.keys()) + list_child_classes,
     )
 
     aci.get_existing()
 
     if state == "present":
         child_configs = []
+
+        # Process existing single-value child classes
         for class_name, attribute in child_classes.items():
             attribute_input = attribute.get("attribute_input")
             # This condition enables to user to keep its previous configurations if they are not passing anything in the payload.
@@ -470,6 +658,288 @@ def main():
                         child_configs.append({class_name: dict(attributes=dict(descr=""))})
                     else:
                         child_configs.append({class_name: dict(attributes={attribute.get("attribute_name"): attribute_input})})
+
+        # Process rtctrlSetAddComm (list of communities)
+        set_communities = module.params.get("set_communities")
+        if set_communities is not None:
+            existing_communities = []
+
+            # Get existing communities from APIC
+            if isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", []):
+                    if child.get("rtctrlSetAddComm"):
+                        existing_communities.append(child["rtctrlSetAddComm"])
+
+            # Get list of communities from user input
+            new_communities = [comm.get("community") for comm in set_communities]
+
+            # Delete communities that are no longer in the new list
+            for community_obj in existing_communities:
+                existing_community = community_obj.get("attributes", {}).get("community")
+                if existing_community and existing_community not in new_communities:
+                    child_configs.append(
+                        {
+                            "rtctrlSetAddComm": dict(
+                                attributes=dict(
+                                    community=existing_community,
+                                    status="deleted",
+                                ),
+                            )
+                        }
+                    )
+
+            # Add new communities
+            for comm in set_communities:
+                child_configs.append(
+                    {
+                        "rtctrlSetAddComm": dict(
+                            attributes=dict(
+                                community=comm.get("community"),
+                                descr=comm.get("description"),
+                            ),
+                        )
+                    }
+                )
+
+        # Process rtctrlSetASPath (list of AS path configurations)
+        # Process rtctrlSetASPath (list of AS path configurations)
+        set_as_path = module.params.get("set_as_path")
+        if set_as_path is not None:
+            existing_as_paths = []
+
+            # Get existing AS paths from APIC
+            if isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", []):
+                    if child.get("rtctrlSetASPath"):
+                        existing_as_paths.append(child["rtctrlSetASPath"])
+
+            # Organize AS path configurations
+            prepend_config = None
+            prepend_last_as_config = None
+
+            for as_path_config in set_as_path:
+                criteria = as_path_config.get("criteria")
+
+                if criteria == "prepend-last-as":
+                    prepend_last_as_config = as_path_config
+                elif criteria == "prepend":
+                    prepend_config = as_path_config
+
+            # Build list of criteria identifiers that should exist in new config
+            new_criteria = []
+            if prepend_config:
+                new_criteria.append("prepend")
+            if prepend_last_as_config:
+                new_criteria.append("prepend-last-as")
+
+            # Delete AS paths that are no longer in the new list
+            for as_path_obj in existing_as_paths:
+                existing_criteria = as_path_obj.get("attributes", {}).get("criteria", "")
+
+                if existing_criteria not in new_criteria:
+                    # Build deletion config based on criteria
+                    if existing_criteria == "prepend-last-as":
+                        child_configs.append(
+                            {
+                                "rtctrlSetASPath": dict(
+                                    attributes=dict(
+                                        criteria="prepend-last-as",
+                                        status="deleted",
+                                    ),
+                                )
+                            }
+                        )
+                    else:
+                        child_configs.append(
+                            {
+                                "rtctrlSetASPath": dict(
+                                    attributes=dict(
+                                        criteria="prepend",
+                                        status="deleted",
+                                    ),
+                                )
+                            }
+                        )
+
+            # Add/update prepend configuration
+            if prepend_config:
+                asns_list = prepend_config.get("asns", [])
+
+                # Get existing ASNs for prepend (if it exists)
+                existing_prepend_asns = []
+                for as_path_obj in existing_as_paths:
+                    existing_criteria = as_path_obj.get("attributes", {}).get("criteria")
+
+                    if existing_criteria == "prepend":
+                        # Get existing ASN children
+                        existing_asn_children = as_path_obj.get("children", [])
+
+                        for child in existing_asn_children:
+                            if child.get("rtctrlSetASPathASN"):
+                                asn = child["rtctrlSetASPathASN"]["attributes"].get("asn")
+                                order = child["rtctrlSetASPathASN"]["attributes"].get("order")
+                                if asn and order is not None:
+                                    existing_prepend_asns.append({"asn": str(asn), "order": str(order)})
+                        break
+
+                # Build list of new ASN identifiers
+                new_asn_identifiers = []
+                for idx, asn_config in enumerate(asns_list):
+                    asn = str(asn_config.get("asn"))
+                    order = asn_config.get("order")
+                    order = str(order)
+                    new_asn_identifiers.append({"asn": asn, "order": order})
+
+                # Delete ASNs that are no longer in the new list
+                for existing_asn in existing_prepend_asns:
+                    asn_found = False
+                    for new_asn in new_asn_identifiers:
+                        if existing_asn["asn"] == new_asn["asn"] and existing_asn["order"] == new_asn["order"]:
+                            asn_found = True
+                            break
+
+                    if not asn_found:
+                        # Delete this ASN
+                        child_configs.append(
+                            {
+                                "rtctrlSetASPath": dict(
+                                    attributes=dict(criteria="prepend"),
+                                    children=[
+                                        {
+                                            "rtctrlSetASPathASN": dict(
+                                                attributes=dict(
+                                                    asn=existing_asn["asn"],
+                                                    order=existing_asn["order"],
+                                                    status="deleted",
+                                                ),
+                                            )
+                                        }
+                                    ],
+                                )
+                            }
+                        )
+
+                # Add new ASNs
+                asn_children = []
+                for idx, asn_config in enumerate(asns_list):
+                    asn = asn_config.get("asn")
+                    order = asn_config.get("order")
+
+                    asn_children.append(
+                        {
+                            "rtctrlSetASPathASN": dict(
+                                attributes=dict(
+                                    asn=str(asn),
+                                    order=str(order),
+                                ),
+                                children=[],
+                            )
+                        }
+                    )
+
+                as_path_attrs = dict(criteria="prepend")
+                child_configs.append({"rtctrlSetASPath": dict(attributes=as_path_attrs, children=asn_children)})
+
+            # Add/update prepend-last-as configuration
+            if prepend_last_as_config:
+                last_num = prepend_last_as_config.get("last_num")
+
+                as_path_attrs = dict(
+                    criteria="prepend-last-as",
+                    lastnum=str(last_num),
+                )
+                child_configs.append({"rtctrlSetASPath": dict(attributes=as_path_attrs, children=[])})
+
+        # Process rtctrlSetPolicyTag (External EPG or ESG reference)
+        # Only one type can be configured at a time (mutually exclusive)
+        set_policy_tag = module.params.get("set_policy_tag")
+        if set_policy_tag is not None:
+            existing_policy_tags = []
+
+            # Get existing policy tags from APIC
+            if isinstance(aci.existing, list) and len(aci.existing) > 0:
+                for child in aci.existing[0].get("rtctrlAttrP", {}).get("children", []):
+                    if child.get("rtctrlSetPolicyTag"):
+                        existing_policy_tags.append(child["rtctrlSetPolicyTag"])
+
+            # Check if all values are None (empty dict behavior)
+            all_none = all(value is None for value in set_policy_tag.values()) if set_policy_tag else True
+            # If empty dict is passed (all values are None), delete all existing policy tags
+            if all_none:
+                if existing_policy_tags:
+                    child_configs.append(
+                        {
+                            "rtctrlSetPolicyTag": dict(
+                                attributes=dict(status="deleted"),
+                            )
+                        }
+                    )
+            else:
+                # Determine which type is being configured
+                l3out = set_policy_tag.get("l3out")
+                external_epg = set_policy_tag.get("external_epg")
+                ap = set_policy_tag.get("ap")
+                esg = set_policy_tag.get("esg")
+
+                new_target_dn = None
+                new_relationship_class = None
+
+                # External EPG configuration
+                if l3out and external_epg:
+                    new_target_dn = "uni/tn-{0}/out-{1}/instP-{2}".format(tenant, l3out, external_epg)
+                    new_relationship_class = "rtctrlRsSetPolicyTagToInstP"
+                # ESG configuration
+                elif ap and esg:
+                    new_target_dn = "uni/tn-{0}/ap-{1}/esg-{2}".format(tenant, ap, esg)
+                    new_relationship_class = "rtctrlRsSetPolicyTagToESg"
+
+                # If we have valid new configuration
+                if new_target_dn and new_relationship_class:
+                    needs_update = False
+
+                    # Check if existing policy tag matches the new configuration
+                    if existing_policy_tags:
+                        existing_policy_tag = existing_policy_tags[0]
+                        existing_children = existing_policy_tag.get("children", [])
+
+                        # Check if the same relationship with same target exists
+                        existing_match = False
+                        for rel_child in existing_children:
+                            if rel_child.get(new_relationship_class):
+                                existing_target_dn = rel_child[new_relationship_class]["attributes"].get("tDn")
+                                if existing_target_dn == new_target_dn:
+                                    existing_match = True
+                                break
+
+                        # If existing doesn't match, we need to update
+                        if not existing_match:
+                            needs_update = True
+                            aci.api_call(
+                                "DELETE",
+                                "{0}/api/mo/uni/tn-{1}/attr-{2}/sptag.json".format(aci.base_url, tenant, action_rule),
+                            )
+                    else:
+                        # No existing policy tag, need to create
+                        needs_update = True
+
+                    # Add new policy tag configuration if update is needed
+                    if needs_update:
+                        policy_tag_children = [
+                            {
+                                new_relationship_class: dict(
+                                    attributes=dict(tDn=new_target_dn),
+                                    children=[],
+                                )
+                            }
+                        ]
+                        child_configs.append(
+                            {
+                                "rtctrlSetPolicyTag": dict(
+                                    attributes=dict(),
+                                    children=policy_tag_children,
+                                )
+                            }
+                        )
 
         aci.payload(
             aci_class="rtctrlAttrP",
