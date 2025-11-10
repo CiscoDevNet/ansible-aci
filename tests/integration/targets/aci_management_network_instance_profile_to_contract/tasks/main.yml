@@ -57,7 +57,7 @@
     - ans_oob_ctr2
 
 - name: Bind OOB Contracts To Profile - Check Mode
-  cisco.aci.aci_management_consumed_contract:
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     profile: ans_network_inst_profile
     consumed_contract: ans_oob_ctr1
@@ -66,7 +66,7 @@
   register: cm_add_contract_binding
 
 - name: Bind OOB Contracts To Profile - Normal Mode
-  cisco.aci.aci_management_consumed_contract:
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     profile: ans_network_inst_profile
     consumed_contract: ans_oob_ctr1
@@ -74,7 +74,7 @@
   register: nm_add_contract_binding
 
 - name: Bind OOB Contracts To Profile Again - Test Idempotence
-  cisco.aci.aci_management_consumed_contract:
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     profile: ans_network_inst_profile
     consumed_contract: ans_oob_ctr1
@@ -91,6 +91,7 @@
       - nm_add_contract_binding is changed
       - nm_add_contract_binding.previous == []
       - nm_add_contract_binding.current.0.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr1"
+      - nm_add_contract_binding.current.0.mgmtRsOoBCons.attributes.prio == "unspecified"
       - nm_add_contract_binding.proposed == cm_add_contract_binding.proposed
       - nm_add_contract_binding_again is not changed
       - nm_add_contract_binding_again.previous == nm_add_contract_binding.current
@@ -98,28 +99,51 @@
       - nm_add_contract_binding_again.proposed == nm_add_contract_binding.proposed
 
 # MODIFY CONTRACT BINDING
-- name: Update OOB Contract Binding
-  cisco.aci.aci_management_consumed_contract:
+- name: Update OOB Contract Binding - Check Mode
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     profile: ans_network_inst_profile
     consumed_contract: ans_oob_ctr1
     dscp_priority: level1
     state: present
-  register: update_contract_binding
+  check_mode: true
+  register: cm_update_contract_binding
+
+- name: Update OOB Contract Binding - Normal Mode
+  cisco.aci.aci_management_network_instance_profile_to_contract:
+    <<: *aci_info
+    profile: ans_network_inst_profile
+    consumed_contract: ans_oob_ctr1
+    dscp_priority: level1
+    state: present
+  register: nm_update_contract_binding
+
+- name: Update OOB Contract Binding Again - Check Idempotence
+  cisco.aci.aci_management_network_instance_profile_to_contract:
+    <<: *aci_info
+    profile: ans_network_inst_profile
+    consumed_contract: ans_oob_ctr1
+    dscp_priority: level1
+    state: present
+  register: nm_update_contract_binding_again
 
 - name: Verify Object Update
   ansible.builtin.assert:
     that:
-      - update_contract_binding is changed
-      - update_contract_binding.previous == nm_add_contract_binding_again.current
-      - update_contract_binding.current.0.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr1"
-      - update_contract_binding.current.0.mgmtRsOoBCons.attributes.prio == "level1"
-      - update_contract_binding.proposed.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr1"
-      - update_contract_binding.proposed.mgmtRsOoBCons.attributes.prio == "level1"
+      - cm_update_contract_binding is changed
+      - cm_update_contract_binding.proposed.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr1"
+      - cm_update_contract_binding.proposed.mgmtRsOoBCons.attributes.prio == "level1"
+      - nm_update_contract_binding is changed
+      - nm_update_contract_binding.previous == nm_add_contract_binding_again.current
+      - nm_update_contract_binding.current.0.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr1"
+      - nm_update_contract_binding.current.0.mgmtRsOoBCons.attributes.prio == "level1"
+      - nm_update_contract_binding.proposed.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr1"
+      - nm_update_contract_binding.proposed.mgmtRsOoBCons.attributes.prio == "level1"
+      - nm_update_contract_binding_again is not changed
 
 # QUERY CONTRACT BINDING
-- name: Query Management Network Instance Profile
-  cisco.aci.aci_management_consumed_contract:
+- name: Query Specific OOB Contract Binding
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     profile: ans_network_inst_profile
     consumed_contract: ans_oob_ctr1
@@ -127,58 +151,71 @@
   register: query_contract_binding
 
 - name: Create Second OOB Contract Binding
-  cisco.aci.aci_management_consumed_contract:
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     profile: ans_network_inst_profile
     consumed_contract: ans_oob_ctr2
     state: present
 
 - name: Query All OOB Contract Bindings
-  cisco.aci.aci_management_consumed_contract:
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     state: query
   register: query_all_contract_bindings
 
-- name: Verify Object Query
+- name: Verify Object Queries
   ansible.builtin.assert:
     that:
       - query_contract_binding is not changed
       - query_contract_binding.current.0.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr1"
       - query_contract_binding.current.0.mgmtRsOoBCons.attributes.prio == "level1"
       - query_contract_binding.proposed == {}
+      - query_contract_binding.current | length == 1
       - query_all_contract_bindings is not changed
       - query_all_contract_bindings.proposed == {}
       - query_all_contract_bindings.current | length >= 2
 
 # DELETE CONTRACT BINDING
-- name: Delete OOB Contract Binding
-  cisco.aci.aci_management_consumed_contract:
+- name: Delete OOB Contract Binding - Check Mode
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     profile: ans_network_inst_profile
     consumed_contract: ans_oob_ctr2
     state: absent
-  register: remove_contract_binding
+  register: cm_remove_contract_binding
+  check_mode: true
 
-- name: Delete OOB Contract Binding Again
-  cisco.aci.aci_management_consumed_contract:
+- name: Delete OOB Contract Binding - Normal Mode
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     <<: *aci_info
     profile: ans_network_inst_profile
     consumed_contract: ans_oob_ctr2
     state: absent
-  register: remove_contract_binding_again
+  register: nm_remove_contract_binding
+
+- name: Delete OOB Contract Binding Again - Test Idempotence
+  cisco.aci.aci_management_network_instance_profile_to_contract:
+    <<: *aci_info
+    profile: ans_network_inst_profile
+    consumed_contract: ans_oob_ctr2
+    state: absent
+  register: nm_remove_contract_binding_again
 
 - name: Verify object removal
   ansible.builtin.assert:
     that:
-      - remove_contract_binding is changed
-      - remove_contract_binding.current == []
-      - remove_contract_binding.previous.0.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr2"
-      - remove_contract_binding.previous.0.mgmtRsOoBCons.attributes.prio == "unspecified"
-      - remove_contract_binding.proposed == {}
-      - remove_contract_binding_again is not changed
-      - remove_contract_binding_again.current == []
-      - remove_contract_binding_again.previous == []
-      - remove_contract_binding_again.proposed == {}
+      - cm_remove_contract_binding is changed
+      - cm_remove_contract_binding.previous.0.mgmtRsOoBCons.attributes.tnVzOOBBrCPName == "ans_oob_ctr2"
+      - cm_remove_contract_binding.previous.0.mgmtRsOoBCons.attributes.prio == "unspecified"
+      - cm_remove_contract_binding.proposed == {}
+      - nm_remove_contract_binding is changed
+      - nm_remove_contract_binding.current == []
+      - nm_remove_contract_binding.previous == cm_remove_contract_binding.previous
+      - nm_remove_contract_binding.proposed == {}
+      - nm_remove_contract_binding_again is not changed
+      - nm_remove_contract_binding_again.current == []
+      - nm_remove_contract_binding_again.previous == []
+      - nm_remove_contract_binding_again.proposed == {}
 
 # CLEAN ENVIRONMENT
 - name: Delete Management Network Instance Profile

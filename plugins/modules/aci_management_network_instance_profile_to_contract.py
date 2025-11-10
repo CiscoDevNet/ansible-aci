@@ -12,14 +12,14 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 
 DOCUMENTATION = r"""
 ---
-module: aci_management_consumed_contract
-short_description: Manage External Network Consumed Contracts (mgmt:RsOoBCons)
+module: aci_management_network_instance_profile_to_contract
+short_description: Bind Consumed Contract to External Management Network Instance Profiles (mgmt:RsOoBCons)
 description:
-- Manage External Network Consumed Contracts on Cisco ACI fabrics.
+- Bind Consumed Contract to External Management Network Instance Profiles on Cisco ACI fabrics.
 options:
   profile:
     description:
-    - The name of the Instance Profile.
+    - The name of the External Management Network Instance Profile.
     type: str
     aliases: [ profile_name ]
   consumed_contract:
@@ -33,7 +33,7 @@ options:
     - This defaults to "unspecified" when unset on the APIC during object creation.
     type: str
     choices: [ level1, level2, level3, level4, level5, level6, unspecified ]
-    aliases: [ priority ]
+    aliases: [ priority, qos ]
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -55,7 +55,7 @@ author:
 
 EXAMPLES = r"""
 - name: Add a Consumed Contract
-  cisco.aci.aci_management_consumed_contract:
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -65,18 +65,8 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a Consumed Contract
-  cisco.aci.aci_management_consumed_contract:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    profile: ansible_instance_profile
-    consumed_contract: ansible_contract
-    state: absent
-  delegate_to: localhost
-
 - name: Query all Consumed Contracts
-  cisco.aci.aci_management_consumed_contract:
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -85,7 +75,7 @@ EXAMPLES = r"""
   register: query_result
 
 - name: Query a specific Consumed Contract
-  cisco.aci.aci_management_consumed_contract:
+  cisco.aci.aci_management_network_instance_profile_to_contract:
     host: apic
     username: admin
     password: SomeSecretPassword
@@ -94,6 +84,16 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete a Consumed Contract
+  cisco.aci.aci_management_network_instance_profile_to_contract:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    profile: ansible_instance_profile
+    consumed_contract: ansible_contract
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
@@ -212,7 +212,7 @@ def main():
     argument_spec.update(
         profile=dict(type="str", aliases=["profile_name"]),
         consumed_contract=dict(type="str", aliases=["contract_name", "name"]),
-        dscp_priority=dict(type="str", choices=VALID_QOS_CLASSES, aliases=["priority"]),
+        dscp_priority=dict(type="str", choices=VALID_QOS_CLASSES, aliases=["priority", "qos"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
     )
 
@@ -243,7 +243,7 @@ def main():
             aci_class="mgmtRsOoBCons",
             aci_rn="rsooBCons-{0}".format(consumed_contract),
             module_object=consumed_contract,
-            target_filter={"name": consumed_contract},
+            target_filter={"tnVzOOBBrCPName": consumed_contract},
         ),
     )
 
