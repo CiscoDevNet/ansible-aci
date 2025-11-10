@@ -89,12 +89,15 @@
         subject: ansible_test_oob_subject
         state: present
 
-    - name: ensure OOB filter exists for tests to kick off
+    - name: ensure OOB filters exist for tests to kick off
       cisco.aci.aci_filter:
         <<: *aci_info
         tenant: mgmt
-        filter: ansible_test_oob_filter
+        filter: "{{ item }}"
         state: present
+      loop:
+        - ansible_test_oob_filter
+        - ansible_test_oob_filter2
 
     - name: create subject filter binding - check mode works
       cisco.aci.aci_contract_subject_to_filter: &aci_subject_filter_present
@@ -132,6 +135,17 @@
       ignore_errors: true
       register: present_missing_param
 
+    - name: create OOB subject filter binding - check mode
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_info
+        tenant: mgmt
+        contract: ansible_test_oob_ctr
+        contract_type: oob
+        subject: ansible_test_oob_subject
+        filter: ansible_test_oob_filter
+      check_mode: true
+      register: cm_oob_subject_filter_present
+
     - name: create OOB subject filter binding - creation works
       cisco.aci.aci_contract_subject_to_filter:
         <<: *aci_info
@@ -152,6 +166,16 @@
         filter: ansible_test_oob_filter
       register: oob_subject_filter_present_idempotent
 
+    - name: update OOB contract binding
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_info
+        tenant: mgmt
+        contract: ansible_test_oob_ctr
+        contract_type: oob
+        subject: ansible_test_oob_subject
+        filter: ansible_test_oob_filter2
+      register: oob_subject_filter_update
+
     - name: present assertions
       ansible.builtin.assert:
         that:
@@ -170,11 +194,15 @@
           - subject_filter_update.sent.vzRsSubjFiltAtt.attributes.directives == ''
           - present_missing_param is failed
           - 'present_missing_param.msg == "state is present but all of the following are missing: contract, filter, subject"'
+          - cm_oob_subject_filter_present is changed
+          - cm_oob_subject_filter_present.sent.vzRsSubjFiltAtt.attributes.tnVzFilterName == 'ansible_test_oob_filter'
           - oob_subject_filter_present is changed
           - oob_subject_filter_present.previous == []
           - oob_subject_filter_present.sent.vzRsSubjFiltAtt.attributes.tnVzFilterName == 'ansible_test_oob_filter'
           - oob_subject_filter_present_idempotent is not changed
           - oob_subject_filter_present_idempotent.previous != []
+          - oob_subject_filter_update is changed
+          - oob_subject_filter_update.sent.vzRsSubjFiltAtt.attributes.tnVzFilterName == 'ansible_test_oob_filter2'
 
     - name: query all
       cisco.aci.aci_contract_subject_to_filter:
@@ -236,6 +264,18 @@
         <<: *aci_subject_filter_absent
       register: subject_filter_absent_idempotent
 
+    - name: delete OOB binding (check mode)
+      cisco.aci.aci_contract_subject_to_filter:
+        <<: *aci_info
+        tenant: mgmt
+        contract: ansible_test_oob_ctr
+        contract_type: oob
+        subject: ansible_test_oob_subject
+        filter: ansible_test_oob_filter
+        state: absent
+      register: cm_oob_delete_binding
+      check_mode: true
+
     - name: delete OOB binding
       cisco.aci.aci_contract_subject_to_filter:
         <<: *aci_info
@@ -282,6 +322,9 @@
           - subject_filter_absent_idempotent.previous == []
           - absent_missing_param is failed
           - 'absent_missing_param.msg == "state is absent but all of the following are missing: filter"'
+          - cm_oob_delete_binding is changed
+          - cm_oob_delete_binding.proposed == {}
+          - cm_oob_delete_binding.previous != []
           - oob_delete_binding is changed
           - oob_delete_binding.proposed == {}
           - oob_delete_binding.previous != []
@@ -492,9 +535,12 @@
         contract: ansible_test_oob_ctr
         state: absent
 
-    - name: cleanup OOB filter
+    - name: cleanup OOB filters
       cisco.aci.aci_filter:
         <<: *aci_info
         tenant: mgmt
-        filter: ansible_test_oob_filter
+        filter: "{{ item }}"
         state: absent
+      loop:
+        - ansible_test_oob_filter
+        - ansible_test_oob_filter2
