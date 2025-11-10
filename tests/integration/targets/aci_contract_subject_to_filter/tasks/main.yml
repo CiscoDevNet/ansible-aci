@@ -241,6 +241,7 @@
           - query_all is not changed
           - query_all.current | length > 1
           - query_all.current.0.vzRsSubjFiltAtt is defined
+          - query_all.current | select('search', 'oobbrc-') | list | length > 0
           - query_binding is not changed
           - query_binding.current != []
           - query_binding_non_existing_subject.current == []
