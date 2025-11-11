@@ -4,6 +4,39 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.13.0
+=======
+
+Release Summary
+---------------
+
+Release v2.13.0 of the ``ansible-aci`` collection on 2025-11-11.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.12.0.
+
+Minor Changes
+-------------
+
+- Add support for OOB contracts by adding contract_type attribute to aci_contract_subject_to_filter
+- Added ability to bind external epg to device selection interface context in aci_l4l7_device_selection_interface_context
+- Added aci_switch_access_config and aci_switch_fabric_config modules to manage Switch Configurations.
+- Added module to manage the Commissioning and Decommissioning of the Fabric Node
+- Adding guidelines for Ansible ACI module developement
+- Change the format from reStructuredText file type to Markdown type.
+- Changed the format of the documentation developing_aci_modules_guildelines is the new changed file along with sections segrigated in other files.
+
+Bugfixes
+--------
+
+- Added fix to support ansible-core 2.19 to the aci_rest module
+- Extend allowed ranges for card and subPort in interface input of aci_interface_config module
+- Modified code to get description value without an explicit default in aci_l4l7_service_graph_template
+
+New Modules
+-----------
+
+- cisco.aci.aci_switch_access_config - Manage Switch Access Policy Configuration of Leaf and Spine nodes (infra:NodeConfig).
+- cisco.aci.aci_switch_fabric_config - Manage Switch Fabric Policy Configuration of Leaf and Spine nodes (fabric:NodeConfig).
+
 v2.12.0
 =======
 
