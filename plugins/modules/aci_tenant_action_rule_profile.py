@@ -116,8 +116,9 @@ options:
     type: str
   set_communities:
     description:
-    - List of communities to add to the action rule profile.
+    - List of additional communities to add to the action rule profile using the append criteria.
     - To delete all communities, pass an empty list.
+    - This is only supported in Cisco ACI Release 6.0(2) and higher.
     type: list
     elements: dict
     suboptions:
@@ -135,6 +136,7 @@ options:
     description:
     - List of AS path prepend configurations.
     - To delete all AS path configurations, pass an empty list.
+    - This is only supported in Cisco ACI Release 6.0(2) and higher.
     type: list
     elements: dict
     suboptions:
@@ -143,7 +145,6 @@ options:
         - The AS path criteria.
         type: str
         choices: [ prepend, prepend-last-as ]
-        default: prepend
       last_num:
         description:
         - Number of times to prepend the last AS.
@@ -171,6 +172,7 @@ options:
     - The set action rule based on policy tag (External EPG or ESG).
     - To delete this attribute, pass an empty dictionary.
     - Either External EPG (l3out and external_epg) or ESG (ap and esg) must be configured, but not both.
+    - This is only supported in Cisco ACI Release 6.0(2) and higher.
     type: dict
     suboptions:
       l3out:
@@ -501,7 +503,7 @@ def main():
             type="list",
             elements="dict",
             options=dict(
-                criteria=dict(type="str", choices=["prepend", "prepend-last-as"], default="prepend"),
+                criteria=dict(type="str", choices=["prepend", "prepend-last-as"]),
                 last_num=dict(type="int"),
                 asns=dict(
                     type="list",
