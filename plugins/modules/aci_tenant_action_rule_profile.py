@@ -117,7 +117,7 @@ options:
   set_communities:
     description:
     - List of additional communities to add to the action rule profile using the append criteria.
-    - To delete all communities, pass an empty list.
+    - Providing an empty list O(set_communities=[]) will remove all communities.
     - This is only supported in Cisco ACI Release 6.0(2) and higher.
     type: list
     elements: dict
@@ -134,8 +134,8 @@ options:
         aliases: [ descr ]
   set_as_path:
     description:
-    - List of AS path prepend configurations.
-    - To delete all AS path configurations, pass an empty list.
+    - List of Autonomous System (AS) path prepend configurations.
+    - Providing an empty list O(set_as_path=[]) will remove all AS path configurations.
     - This is only supported in Cisco ACI Release 6.0(2) and higher.
     type: list
     elements: dict
@@ -170,7 +170,7 @@ options:
   set_policy_tag:
     description:
     - The set action rule based on policy tag (External EPG or ESG).
-    - To delete this attribute, pass an empty dictionary.
+    - Providing an empty dictionary O(set_policy_tag={}) will remove this attribute.
     - Either External EPG (l3out and external_epg) or ESG (ap and esg) must be configured, but not both.
     - This is only supported in Cisco ACI Release 6.0(2) and higher.
     type: dict
