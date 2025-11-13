@@ -13,6 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_management_network_instance_profile_to_contract
+version_added: "2.13.0"
 short_description: Bind Consumed Contract to External Management Network Instance Profiles (mgmt:RsOoBCons)
 description:
 - Bind Consumed Contract to External Management Network Instance Profiles on Cisco ACI fabrics.

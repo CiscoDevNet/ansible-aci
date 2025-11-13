@@ -110,6 +110,7 @@ action_groups:
     - aci_fabric_management_access_https_cipher
     - aci_fabric_node
     - aci_fabric_node_control
+    - aci_fabric_node_decommission
     - aci_fabric_pod
     - aci_fabric_pod_connectivity_profile
     - aci_fabric_pod_external_tep
@@ -219,6 +220,8 @@ action_groups:
     - aci_maintenance_group
     - aci_maintenance_group_node
     - aci_maintenance_policy
+    - aci_management_network_instance_profile
+    - aci_management_network_instance_profile_to_contract
     - aci_match_as_path_regex_term
     - aci_match_community_factor
     - aci_match_community_regex_term
@@ -251,6 +254,8 @@ action_groups:
     - aci_static_binding_to_epg
     - aci_static_node_mgmt_address
     - aci_subject_label
+    - aci_switch_access_config
+    - aci_switch_fabric_config
     - aci_switch_leaf_selector
     - aci_switch_policy_leaf_profile
     - aci_switch_policy_vpc_protection_group
