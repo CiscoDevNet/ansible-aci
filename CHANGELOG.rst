@@ -4,6 +4,39 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.13.0
+=======
+
+Release Summary
+---------------
+
+Release v2.13.0 of the ``ansible-aci`` collection on 2025-12-01.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.12.0.
+
+Minor Changes
+-------------
+
+- Add contract_type option to aci_contract_subject_to_filter and aci_contract_subject.
+- Add l3out, l3out_tenant, external_epg and redistribute options to aci_l4l7_device_selection_interface_context.
+- Add normalize_payload_values option to aci_rest for Ansible Core 2.19 support.
+- Add set_communities, set_as_path and set_policy_tag options to aci_tenant_action_rule_profile.
+
+Bugfixes
+--------
+
+- Fix allowed ranges of interface option in aci_interface_config module.
+- Fix descriptions of options in aci_maintenance_policy.
+- Fix querying description in aci_l4l7_service_graph_template.
+
+New Modules
+-----------
+
+- cisco.aci.aci_fabric_node_decommission - Manage the Commissioning and Decommissioning of the Fabric Node (fabric:RsDecommissionNode)
+- cisco.aci.aci_management_network_instance_profile - Manage external management network instance profiles (mgmt:InstP).
+- cisco.aci.aci_management_network_instance_profile_to_contract - Bind Consumed Contract to External Management Network Instance Profiles (mgmt:RsOoBCons)
+- cisco.aci.aci_switch_access_config - Manage Switch Access Policy Configuration of Leaf and Spine nodes (infra:NodeConfig).
+- cisco.aci.aci_switch_fabric_config - Manage Switch Fabric Policy Configuration of Leaf and Spine nodes (fabric:NodeConfig).
+
 v2.12.0
 =======
 

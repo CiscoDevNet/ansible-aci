@@ -13,6 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_management_network_instance_profile
+version_added: "2.13.0"
 short_description: Manage external management network instance profiles (mgmt:InstP).
 description:
 - Manage external management network instance profiles on Cisco ACI fabrics.
