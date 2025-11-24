@@ -1586,12 +1586,14 @@ class ACIModule(object):
                               MOs should have their own module.
         """
         proposed = dict((k, str(v)) for k, v in class_config.items() if v is not None)
-        if self.params.get("annotation") is not None:
-            proposed["annotation"] = self.params.get("annotation")
-        if self.params.get("owner_key") is not None:
-            proposed["ownerKey"] = self.params.get("owner_key")
-        if self.params.get("owner_tag") is not None:
-            proposed["ownerTag"] = self.params.get("owner_tag")
+        # Don't change the polUni Object, as this is managed by ACI itself
+        if aci_class != "polUni":
+            if self.params.get("annotation") is not None:
+                proposed["annotation"] = self.params.get("annotation")
+            if self.params.get("owner_key") is not None:
+                proposed["ownerKey"] = self.params.get("owner_key")
+            if self.params.get("owner_tag") is not None:
+                proposed["ownerTag"] = self.params.get("owner_tag")
         self.proposed = {aci_class: {"attributes": proposed}}
 
         # add child objects to proposed
