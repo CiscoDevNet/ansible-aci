@@ -50,6 +50,7 @@ action_groups:
     - aci_bgp_rr_node
     - aci_bgp_timers_policy
     - aci_bulk_static_binding_to_epg
+    - aci_bulk_static_bindings_to_epgs
     - aci_cloud_ap
     - aci_cloud_aws_provider
     - aci_cloud_bgp_asn
