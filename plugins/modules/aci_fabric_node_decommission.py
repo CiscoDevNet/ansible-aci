@@ -13,6 +13,7 @@ ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported
 DOCUMENTATION = r"""
 ---
 module: aci_fabric_node_decommission
+version_added: "2.13.0"
 short_description: Manage the Commissioning and Decommissioning of the Fabric Node (fabric:RsDecommissionNode)
 description:
 - Manage the Commissioning and Decommissioning of the Fabric Node on Cisco ACI fabrics.
