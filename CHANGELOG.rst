@@ -10,23 +10,28 @@ v2.13.0
 Release Summary
 ---------------
 
-Release v2.13.0 of the ``ansible-aci`` collection on 2025-12-01.
+Release v2.13.0 of the ``ansible-aci`` collection on 2025-12-09.
 This changelog describes all changes made to the modules and plugins included in this collection since v2.12.0.
 
 Minor Changes
 -------------
 
-- Add contract_type option to aci_contract_subject_to_filter and aci_contract_subject.
-- Add l3out, l3out_tenant, external_epg and redistribute options to aci_l4l7_device_selection_interface_context.
-- Add normalize_payload_values option to aci_rest for Ansible Core 2.19 support.
-- Add set_communities, set_as_path and set_policy_tag options to aci_tenant_action_rule_profile.
+- Add aci_management_network_instance_profile_to_contract module
+- Add support for OOB contracts by adding contract_type attribute to aci_contract_subject_to_filter
+- Added ability to bind external epg to device selection interface context in aci_l4l7_device_selection_interface_context
+- Added aci_switch_access_config and aci_switch_fabric_config modules to manage Switch Configurations.
+- Added module to manage the Commissioning and Decommissioning of the Fabric Node
+- Adding guidelines for Ansible ACI module developement
+- Addition of child classes rtctrlSetAddComm, rtctrlSetASPath and rtctrlSetPolicyTag to aci_tenant_action_rule_profile
+- Change the format from reStructuredText file type to Markdown type.
+- Changed the format of the documentation developing_aci_modules_guildelines is the new changed file along with sections segrigated in other files.
 
 Bugfixes
 --------
 
-- Fix allowed ranges of interface option in aci_interface_config module.
-- Fix descriptions of options in aci_maintenance_policy.
-- Fix querying description in aci_l4l7_service_graph_template.
+- Added fix to support ansible-core 2.19 to the aci_rest module
+- Extend allowed ranges for card and subPort in interface input of aci_interface_config module
+- Modified code to get description value without an explicit default in aci_l4l7_service_graph_template
 
 New Modules
 -----------
