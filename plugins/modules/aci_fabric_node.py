@@ -224,7 +224,6 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.aci.plugins.module_utils.constants import NODE_TYPE_MAPPING
 from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
 
-
 # NOTE: (This problem is also present on the APIC GUI)
 # NOTE: When specifying a C(role) the new Fabric Node Member will be created but Role on GUI will be "unknown", hence not what seems to be a module problem
 
