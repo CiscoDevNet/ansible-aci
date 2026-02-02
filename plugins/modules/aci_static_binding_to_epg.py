@@ -372,10 +372,8 @@ def main():
             leafs = leafs[0]
         elif len(leafs) == 2:
             if interface_type not in ["vpc", "fex_vpc"]:
-                aci.fail_json(
-                    msg='The interface_types "switch_port", "port_channel", and "fex" \
-                    do not support using multiple leafs for a single binding'
-                )
+                aci.fail_json(msg='The interface_types "switch_port", "port_channel", and "fex" \
+                    do not support using multiple leafs for a single binding')
             leafs = "-".join(leafs)
         else:
             aci.fail_json(msg='The "leafs" parameter must not have more than 2 entries')
@@ -392,10 +390,8 @@ def main():
             extpaths = extpaths[0]
         elif len(extpaths) == 2:
             if interface_type != "fex_vpc":
-                aci.fail_json(
-                    msg='The interface_types "fex" \
-                    and "fex_port_channel" do not support using multiple extpaths for a single binding'
-                )
+                aci.fail_json(msg='The interface_types "fex" \
+                    and "fex_port_channel" do not support using multiple extpaths for a single binding')
             extpaths = "-".join(extpaths)
         else:
             aci.fail_json(msg='The "extpaths" parameter must not have more than 2 entries')

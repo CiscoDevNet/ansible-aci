@@ -57,7 +57,6 @@ from ansible.module_utils.common.text.converters import to_native
 from ansible.errors import AnsibleError
 from ansible.utils.display import Display
 
-
 display = Display()
 
 
