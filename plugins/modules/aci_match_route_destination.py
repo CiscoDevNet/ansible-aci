@@ -97,16 +97,6 @@ EXAMPLES = r"""
     state: present
   delegate_to: localhost
 
-- name: Delete a match rule destination
-  cisco.aci.aci_match_rule_destination:
-    host: apic
-    username: admin
-    password: SomeSecretPassword
-    match_rule: prod_match_rule
-    tenant: production
-    state: absent
-  delegate_to: localhost
-
 - name: Query all match rules destination
   cisco.aci.aci_match_rule_destination:
     host: apic
@@ -127,6 +117,17 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Delete a match rule destination
+  cisco.aci.aci_match_rule_destination:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    match_rule: prod_match_rule
+    tenant: production
+    ip: 11.11.11.11/24
+    state: absent
+  delegate_to: localhost
 """
 
 RETURN = r"""
