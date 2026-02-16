@@ -477,9 +477,9 @@ def main():
 
     aci = ACIModule(module)
     if lag_type == "leaf" and port_channel_policy is not None:
-        aci.fail_json("port_channel_policy is not a valid parameter for leaf\
- (leaf access port policy group), if used\
- assign null to it (port_channel_policy: null).")
+        aci.fail_json(
+            "port_channel_policy is not a valid parameter for leaf (leaf access port policy group), if used assign null to it (port_channel_policy: null)."
+        )
     invalid_parameters = {
         "transceiver_policy": "transceiver_policy is not a valid parameter for link/node (Port Channel, Virtual Port Channel),\
  if used assign null to it (transceiver_policy: null).",
