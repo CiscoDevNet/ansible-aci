@@ -115,13 +115,27 @@
       - add_another_ip is changed
       - add_ip_nm.current.0.l3extIp.attributes.addr == "25.45.67.90/24"
       - add_another_ip.current.0.l3extIp.attributes.addr == "26.45.67.90/24"
-  
+
+  - name: Query all floating svi secondary ips without filters
+    cisco.aci.aci_l3out_floating_svi_secondary_ip:
+      <<: *aci_info
+      state: query
+    register: query_all_no_filter
+
+  - name: Verify query all floating svi secondary ips without filters
+    ansible.builtin.assert:
+      that:
+      - query_all_no_filter is not changed
+      - query_all_no_filter.current | length >= 2
+
   - name: Query a floating svi secondary_ip
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
       <<: *floating_svi
       state: query
     register: query_ip
 
+  # This test was inaccurate but keeping to assure behaviour and added new test for query all
+  # The test does not do a class query but is testing the length of children
   - name: Query all ips
     cisco.aci.aci_l3out_floating_svi_secondary_ip:
       <<: *intf_present
