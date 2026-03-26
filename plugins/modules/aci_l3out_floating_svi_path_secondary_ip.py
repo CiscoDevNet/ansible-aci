@@ -26,51 +26,42 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: true
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-    required: true
   node_profile:
     description:
     - Name of the node profile.
     type: str
     aliases: [ node_profile_name, logical_node ]
-    required: true
   interface_profile:
     description:
     - Name of the interface profile.
     type: str
     aliases: [ interface_profile_name, logical_interface ]
-    required: true
   pod_id:
     description:
     - Pod to build the interface on.
     type: str
-    required: true
   node_id:
     description:
     - Node to build the interface on for Port-channels and single ports.
     type: str
-    required: true
   encap:
     description:
     - Encapsulation on the interface (e.g. "vlan-500")
     type: str
-    required: true
   domain:
     description:
     - This option allows virtual machines to send frames with a mac address.
     type: str
-    required: true
   domain_type:
     description:
     - The domain type of the path.
     type: str
     choices: [ physical, vmware ]
-    required: true
   secondary_ip:
     description:
     - The secondary floating IP address.
@@ -293,16 +284,16 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"], required=True),
-        l3out=dict(type="str", aliases=["l3out_name"], required=True),
-        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
-        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        l3out=dict(type="str", aliases=["l3out_name"]),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
-        pod_id=dict(type="str", required=True),
-        node_id=dict(type="str", required=True),
-        encap=dict(type="str", required=True),
-        domain_type=dict(type="str", choices=["physical", "vmware"], required=True),
-        domain=dict(type="str", required=True),
+        pod_id=dict(type="str"),
+        node_id=dict(type="str"),
+        encap=dict(type="str"),
+        domain_type=dict(type="str", choices=["physical", "vmware"]),
+        domain=dict(type="str"),
         secondary_ip=dict(type="str", aliases=["secondary_floating_address"]),
     )
 
@@ -310,8 +301,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["secondary_ip"]],
-            ["state", "present", ["secondary_ip"]],
+            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile", "pod_id", "node_id", "encap", "domain_type", "domain", "secondary_ip"]],
+            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "pod_id", "node_id", "encap", "domain_type", "domain", "secondary_ip"]],
         ],
     )
 
@@ -329,12 +320,14 @@ def main():
 
     aci = ACIModule(module)
 
-    node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
+    node_dn = None
+    if pod_id and node_id:
+        node_dn = "topology/pod-{0}/node-{1}".format(pod_id, node_id)
 
     tDn = None
     if domain_type == "physical":
         tDn = "uni/phys-{0}".format(domain)
-    else:
+    elif domain_type == "vmware":
         tDn = "uni/vmmp-VMware/dom-{0}".format(domain)
 
     aci.construct_url(
