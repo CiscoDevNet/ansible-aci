@@ -301,8 +301,16 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile", "pod_id", "node_id", "encap", "domain_type", "domain", "secondary_ip"]],
-            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "pod_id", "node_id", "encap", "domain_type", "domain", "secondary_ip"]],
+            [
+                "state",
+                "absent",
+                ["tenant", "l3out", "node_profile", "interface_profile", "pod_id", "node_id", "encap", "domain_type", "domain", "secondary_ip"],
+            ],
+            [
+                "state",
+                "present",
+                ["tenant", "l3out", "node_profile", "interface_profile", "pod_id", "node_id", "encap", "domain_type", "domain", "secondary_ip"],
+            ],
         ],
     )
 
