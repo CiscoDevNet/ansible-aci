@@ -80,6 +80,7 @@
     svc_type: adc
     trunking: false
     prom_mode: true
+    name_alias: ansible_device_alias
     state: present
   check_mode: true
   register: create_l4l7_device_cm
@@ -132,6 +133,7 @@
     - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.promMode == "yes"
     - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.svcType == "ADC"
     - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.trunking == "no"
+    - create_l4l7_device_cm.proposed.vnsLDevVip.attributes.nameAlias == "ansible_device_alias"
     - create_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device"
     - create_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_device"
     - create_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
@@ -142,6 +144,7 @@
     - create_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "yes"
     - create_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "ADC"
     - create_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "no"
+    - create_l4l7_device.current.0.vnsLDevVip.attributes.nameAlias == "ansible_device_alias"
     - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_virt_device"
     - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.name == "ansible_virt_device"
     - create_virt_l4l7_device.current.0.vnsLDevVip.attributes.contextAware == "single-Context"
@@ -183,6 +186,7 @@
     svc_type: fw
     trunking: true
     prom_mode: false
+    name_alias: ansible_device_alias_updated
     state: present
   register: update_l4l7_device
 
@@ -200,6 +204,7 @@
     - update_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "no"
     - update_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "FW"
     - update_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
+    - update_l4l7_device.current.0.vnsLDevVip.attributes.nameAlias == "ansible_device_alias_updated"
 
 - name: Verify domain binding object
   ansible.builtin.assert:
@@ -253,6 +258,7 @@
     - query_l4l7_device.current.0.vnsLDevVip.attributes.promMode == "no"
     - query_l4l7_device.current.0.vnsLDevVip.attributes.svcType == "FW"
     - query_l4l7_device.current.0.vnsLDevVip.attributes.trunking == "yes"
+    - query_l4l7_device.current.0.vnsLDevVip.attributes.nameAlias == "ansible_device_alias_updated"
 
 - name: Query all L4-L7 Devices
   cisco.aci.aci_l4l7_device:

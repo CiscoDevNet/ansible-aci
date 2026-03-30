@@ -155,6 +155,12 @@ def aci_annotation_spec():
     )
 
 
+def aci_name_alias_spec():
+    return dict(
+        name_alias=dict(type="str"),
+    )
+
+
 def aci_owner_spec():
     return dict(
         owner_key=dict(type="str", no_log=False, fallback=(env_fallback, ["ACI_OWNER_KEY"])),
