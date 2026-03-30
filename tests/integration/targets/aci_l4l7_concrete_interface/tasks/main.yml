@@ -202,6 +202,111 @@
     - delete_concrete_interface_cm.proposed == {}
     - delete_concrete_interface_cm.previous == delete_concrete_interface.previous == add_concrete_interface_update.current
 
+# ADD L4-L7 CONCRETE INTERFACE WITHOUT PATH BINDING
+- name: Create L4-L7 Concrete Interface without path in check mode
+  cisco.aci.aci_l4l7_concrete_interface: &l4l7_concrete_interface_no_path
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_concrete_interface_no_path
+    vnic_name: my_vnic
+    state: present
+  check_mode: true
+  register: add_no_path_cm
+
+- name: Create L4-L7 Concrete Interface without path
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *l4l7_concrete_interface_no_path
+  register: add_no_path
+
+- name: Create L4-L7 Concrete Interface without path again
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *l4l7_concrete_interface_no_path
+  register: add_no_path_again
+
+- name: Verify L4-L7 Concrete Interface without path
+  ansible.builtin.assert:
+    that:
+    - add_no_path_cm is changed
+    - add_no_path is changed
+    - add_no_path_again is not changed
+    - add_no_path_cm.proposed.vnsCIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface_no_path]"
+    - add_no_path_cm.proposed.vnsCIf.attributes.name == "ansible_concrete_interface_no_path"
+    - add_no_path_cm.proposed.vnsCIf.attributes.vnicName == "my_vnic"
+    - add_no_path.current.0.vnsCIf.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface_no_path]"
+    - add_no_path.current.0.vnsCIf.attributes.name == "ansible_concrete_interface_no_path"
+    - add_no_path.current.0.vnsCIf.attributes.vnicName == "my_vnic"
+    - add_no_path.current.0.vnsCIf.children is not defined
+    - add_no_path.previous == []
+    - add_no_path_again.previous == add_no_path_again.current == add_no_path.current
+
+# UPDATE L4-L7 CONCRETE INTERFACE WITHOUT PATH - ADD PATH BINDING
+- name: Add path binding to existing concrete interface without path
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *l4l7_concrete_interface_no_path
+    pod_id: 1
+    node_id: "201"
+    interface: eth1/16
+  register: add_path_to_no_path
+
+- name: Verify path binding was added
+  ansible.builtin.assert:
+    that:
+    - add_path_to_no_path is changed
+    - add_path_to_no_path.current.0.vnsCIf.children.0.vnsRsCIfPathAtt.attributes.tDn == "topology/pod-1/paths-201/pathep-[eth1/16]"
+
+# REMOVE PATH BINDING FROM CONCRETE INTERFACE
+- name: Remove path binding in check mode
+  cisco.aci.aci_l4l7_concrete_interface: &remove_path_binding
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_concrete_interface_no_path
+    interface: ""
+    state: present
+  check_mode: true
+  register: remove_path_cm
+
+- name: Remove path binding
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *remove_path_binding
+  register: remove_path
+
+- name: Remove path binding again
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *remove_path_binding
+  register: remove_path_again
+
+- name: Verify path binding removal
+  ansible.builtin.assert:
+    that:
+    - remove_path_cm is changed
+    - remove_path is changed
+    - remove_path_again is not changed
+    - remove_path.current.0.vnsCIf.attributes.name == "ansible_concrete_interface_no_path"
+    - remove_path.current.0.vnsCIf.children is not defined
+
+# ERROR VALIDATION - INTERFACE WITHOUT POD_ID AND NODE_ID
+- name: Create L4-L7 Concrete Interface with interface but without pod_id and node_id
+  cisco.aci.aci_l4l7_concrete_interface:
+    <<: *aci_info
+    tenant: ansible_tenant
+    device: ansible_device
+    concrete_device: ansible_concrete_device
+    concrete_interface: ansible_concrete_interface_error
+    interface: eth1/16
+    state: present
+  register: error_missing_pod_node
+  ignore_errors: true
+
+- name: Verify error message for missing pod_id and node_id
+  ansible.builtin.assert:
+    that:
+    - error_missing_pod_node is failed
+    - error_missing_pod_node.msg == "pod_id and node_id are required when interface is provided."
+
 # CLEAN UP
 - name: Remove ansible_tenant
   cisco.aci.aci_tenant:

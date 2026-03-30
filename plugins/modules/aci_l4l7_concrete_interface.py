@@ -42,18 +42,23 @@ options:
   pod_id:
     description:
       - The unique identifier for the pod where the concrete interface is located.
+      - Required when I(interface) is provided.
     type: int
   node_id:
     description:
       - The unique identifier for the node where the concrete interface is located.
       - For Ports and Port-channels, this is represented as a single node ID.
       - For virtual Port Channels (vPCs), this is represented as a hyphen-separated pair of node IDs, such as "201-202".
+      - Required when I(interface) is provided.
     type: str
   interface:
     description:
     - The path to the physical interface.
     - For single ports, this is the port name, e.g. "eth1/15".
     - For Port-channels and vPCs, this is the Interface Policy Group name.
+    - When provided with a non-empty value, I(pod_id) and I(node_id) are required.
+    - When set to an empty string, the existing path binding will be removed.
+    - When not provided, the existing path binding will not be modified.
     type: str
     aliases: [ path_ep, interface_name, interface_policy_group, interface_policy_group_name ]
   vnic_name:
@@ -139,6 +144,32 @@ EXAMPLES = r"""
     state: query
   delegate_to: localhost
   register: query_result
+
+- name: Add a new concrete interface without a path binding
+  cisco.aci.aci_l4l7_concrete_interface:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    device: my_device
+    concrete_device: my_concrete_device
+    name: my_concrete_interface
+    vnic_name: my_vnic
+    state: present
+  delegate_to: localhost
+
+- name: Remove the path binding from an existing concrete interface
+  cisco.aci.aci_l4l7_concrete_interface:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    tenant: my_tenant
+    device: my_device
+    concrete_device: my_concrete_device
+    name: my_concrete_interface
+    interface: ""
+    state: present
+  delegate_to: localhost
 
 - name: Delete a concrete interface
   cisco.aci.aci_l4l7_concrete_interface:
@@ -283,7 +314,7 @@ def main():
         supports_check_mode=True,
         required_if=[
             ["state", "absent", ["tenant", "logical_device", "concrete_device", "name"]],
-            ["state", "present", ["tenant", "logical_device", "concrete_device", "name", "pod_id", "node_id", "interface"]],
+            ["state", "present", ["tenant", "logical_device", "concrete_device", "name"]],
         ],
     )
 
@@ -296,6 +327,11 @@ def main():
     node_id = module.params.get("node_id")
     interface = module.params.get("interface")
     vnic_name = module.params.get("vnic_name")
+
+    # required_by and required_together cannot be used here because interface="" (empty string)
+    # is a valid input to remove the path binding, and should not require pod_id and node_id.
+    if interface and (pod_id is None or node_id is None):
+        module.fail_json(msg="pod_id and node_id are required when interface is provided.")
 
     aci = ACIModule(module)
 
@@ -330,20 +366,49 @@ def main():
     aci.get_existing()
 
     if state == "present":
-        path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, "protpaths" if "-" in node_id else "paths", node_id, interface)
+        child_configs = []
+        if interface:
+            path_dn = "topology/pod-{0}/{1}-{2}/pathep-[{3}]".format(pod_id, "protpaths" if "-" in node_id else "paths", node_id, interface)
+            # When updating the path binding, the existing path must be removed first in a separate request
+            # because APIC does not allow two children of the same class (vnsRsCIfPathAtt) in a single payload.
+            existing_path = (
+                aci.existing[0].get("vnsCIf", {}).get("children", [{}])[0].get("vnsRsCIfPathAtt", {}).get("attributes", {}).get("tDn")
+                if aci.existing
+                else None
+            )
+            if existing_path and existing_path != path_dn:
+                # Appending to child_config list not possible because of following errors:
+                #   APIC Error 103: child (Rn) of class vnsRsCIfPathAtt is already attached.
+                #   APIC Error 100: Validation failed: Statically deploying LDevVip on same node on different Pods:
+                #     topology/pod-2/paths-201/pathep-[eth1/16] and topology/pod-1/paths-201/pathep-[eth1/16]
+                # A separate delete request is needed to remove the existing path binding prior to adding the new one.
+                aci.api_call(
+                    "DELETE",
+                    "/api/mo/uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]/rsCIfPathAtt.json".format(
+                        tenant,
+                        logical_device,
+                        concrete_device,
+                        name,
+                    ),
+                )
+            child_configs.append(
+                dict(vnsRsCIfPathAtt=dict(attributes=dict(tDn=path_dn))),
+            )
+        elif interface == "":
+            # Only send the delete child config when an existing path binding is present
+            # This is done to preserve idempotency
+            if aci.existing and aci.existing[0].get("vnsCIf", {}).get("children"):
+                child_configs.append(
+                    dict(vnsRsCIfPathAtt=dict(attributes=dict(status="deleted"))),
+                )
+
         aci.payload(
             aci_class="vnsCIf",
             class_config=dict(
                 name=name,
                 vnicName=vnic_name,
             ),
-            child_configs=[
-                dict(
-                    vnsRsCIfPathAtt=dict(
-                        attributes=dict(tDn=path_dn),
-                    ),
-                ),
-            ],
+            child_configs=child_configs,
         )
         aci.get_diff(aci_class="vnsCIf")
 
