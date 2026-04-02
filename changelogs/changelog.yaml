@@ -419,6 +419,15 @@ releases:
         name: aci_switch_fabric_config
         namespace: ''
     release_date: '2025-12-06'
+  2.13.1:
+    changes:
+      release_summary: 'Release v2.13.1 of the ``ansible-aci`` collection on 2026-04-02.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.13.0.
+
+        '
+    release_date: '2026-04-02'
   2.2.0:
     changes:
       bugfixes:
