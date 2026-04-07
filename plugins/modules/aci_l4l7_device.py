@@ -93,6 +93,7 @@ options:
 extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
+- cisco.aci.name_alias
 notes:
 - The I(tenant) must exist before using this module in your playbook.
   The M(cisco.aci.aci_tenant) modules can be used for this.
@@ -263,13 +264,14 @@ url:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec
+from ansible_collections.cisco.aci.plugins.module_utils.aci import ACIModule, aci_argument_spec, aci_annotation_spec, aci_name_alias_spec
 from ansible_collections.cisco.aci.plugins.module_utils.constants import L4L7_FUNC_TYPES_MAPPING
 
 
 def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
+    argument_spec.update(aci_name_alias_spec())
     argument_spec.update(
         tenant=dict(type="str", aliases=["tenant_name"]),
         name=dict(type="str", aliases=["device", "device_name", "logical_device", "logical_device_name"]),
@@ -308,6 +310,7 @@ def main():
     trunking = aci.boolean(module.params.get("trunking"))
     domain = module.params.get("domain")
     active_active_mode = aci.boolean(module.params.get("active_active_mode"))
+    name_alias = module.params.get("name_alias")
 
     aci.construct_url(
         root_class=dict(
@@ -349,6 +352,7 @@ def main():
                 svcType=service_type.upper(),
                 trunking=trunking,
                 activeActive=active_active_mode,
+                nameAlias=name_alias,
             ),
             child_configs=child_configs,
         )
