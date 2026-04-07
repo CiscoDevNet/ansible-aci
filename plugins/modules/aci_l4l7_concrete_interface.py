@@ -384,7 +384,8 @@ def main():
                 # A separate delete request is needed to remove the existing path binding prior to adding the new one.
                 aci.api_call(
                     "DELETE",
-                    "/api/mo/uni/tn-{0}/lDevVip-{1}/cDev-{2}/cIf-[{3}]/rsCIfPathAtt.json".format(
+                    "{0}/api/mo/uni/tn-{1}/lDevVip-{2}/cDev-{3}/cIf-[{4}]/rsCIfPathAtt.json".format(
+                        aci.base_url,
                         tenant,
                         logical_device,
                         concrete_device,
