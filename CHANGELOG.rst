@@ -4,6 +4,20 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v2.14.0
+=======
+
+Release Summary
+---------------
+
+Release v2.14.0 of the ``ansible-aci`` collection on 2026-04-14.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.13.0.
+
+Minor Changes
+-------------
+
+- Add support for nameAlias attribute in aci_l4l7_device module (#833)
+
 v2.13.0
 =======
 
