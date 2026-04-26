@@ -9,7 +9,7 @@ See the [cisco.aci collection index](https://galaxy.ansible.com/ui/repo/publishe
 ## Requirements
 
 - Ansible v2.16 or newer
-- Python v3.11 or newer
+- Python v3.10 or newer
 
 Follow the [Installing Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) guide for detailed instructions.
 
@@ -67,10 +67,10 @@ Go to the ansible-aci directory
 cd ansible-aci
 ```
 
-Pull the latest master on your aci
+Pull the latest main on your aci
 
 ```sh
-git pull origin master
+git pull origin main
 ```
 
 Build and Install a collection from source
@@ -82,7 +82,7 @@ ansible-galaxy collection install cisco-aci-* --force
 
 #### Second Approach - Download From Latest CI Build
 
-Go to [ansible-aci Actions](https://github.com/CiscoDevNet/ansible-aci/actions/workflows/ansible-test.yml?query=branch%3Amaster) and select the latest CI build.
+Go to [ansible-aci Actions](https://github.com/CiscoDevNet/ansible-aci/actions/workflows/ansible-test.yml?query=branch%3Amain) and select the latest CI build.
 
 Under Artifacts download collection suffixed with the latest version of Ansible (eg. `collection-stable-2.17`) and unzip it using Terminal or Console.
 
@@ -93,6 +93,10 @@ Install the unarchived tar.gz file
 ```sh
 ansible-galaxy collection install cisco-aci-1.0.0.tar.gz —-force
 ```
+
+#### Using the Develop Build
+
+If you would like to use the latest version of the collection with upcoming changes the above steps can be used with the branch as `develop` instead of `main`.
 
 ## Use Cases
 
@@ -131,9 +135,9 @@ To find out more about optimizing playbook execution, please refer to the [Optim
 
 Integration tests for each module in the `cisco.aci` collection are executed on the following ACI versions:
 
-- 4.2
-- 5.2
+- 5.3
 - 6.0
+- 6.1
 
 ## Contributing
 
@@ -151,7 +155,7 @@ To find EOL announcements for ACI versions, refer to the [End-of-Life and End-of
 
 ## Release Notes
 
-See the [Changelog](https://github.com/CiscoDevNet/ansible-aci/blob/master/CHANGELOG.rst) for full release notes.
+See the [Changelog](https://github.com/CiscoDevNet/ansible-aci/blob/main/CHANGELOG.rst) for full release notes.
 
 ## Related Information
 
@@ -163,4 +167,4 @@ For further information and guides, refer to the following:
 
 ## License Information
 
-This collection is licensed under the [GNU General Public License v3.0](https://github.com/CiscoDevNet/ansible-aci/blob/master/LICENSE)
+This collection is licensed under the [GNU General Public License v3.0](https://github.com/CiscoDevNet/ansible-aci/blob/main/LICENSE)
