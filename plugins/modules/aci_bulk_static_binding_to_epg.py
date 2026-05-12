@@ -687,11 +687,18 @@ def get_existing_epgs_based(
 
     existing_bindings = []
     uri = "/api/class/fvRsPathAtt.json?rsp-prop-include=config-only"
+    index = 0
     if not aci.suppress_previous:
         if len(static_paths) == 0:
-            existing_bindings = get_objects_from_aci(aci=aci, uri=uri)
+            epg_dns = list(epg_dict_existing_filtered.keys())
+            while index < len(epg_dns):
+                batch = epg_dns[index: index + BATCH_SIZE]
+                joined_string = ",".join([f'wcard(fvRsPathAtt.dn,"{epg_dn}")' for epg_dn in batch])
+                filter_string = f"query-target-filter=or({joined_string})"
+
+                existing_bindings.extend(get_objects_from_aci(aci=aci, uri=f"{uri}&{filter_string}"))
+                index += BATCH_SIZE
         else:
-            index = 0
             while index < len(static_paths):
                 batch = static_paths[index : index + BATCH_SIZE]
                 joined_string = ",".join([f'eq(fvRsPathAtt.tDn,"{path}")' for path in batch])
