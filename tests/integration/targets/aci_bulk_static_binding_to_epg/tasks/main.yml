@@ -1388,7 +1388,7 @@
     ansible.builtin.assert:
       that:
         - module_level_check_absent_with_epgs is changed
-        - "'children' not in module_level_check_absent.current.0.fvAEPg"
+        - "'children' not in module_level_check_absent_with_epgs.current.0.fvAEPg"
         - module_level_check_absent_with_epgs.current.0.fvAEPg.attributes.name == "anstest"
         - module_level_check_absent_with_epgs.previous.0.fvAEPg.children | length == 1
         - module_level_check_absent_with_epgs.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-108"
@@ -1475,7 +1475,7 @@
     ansible.builtin.assert:
       that:
         - path_and_module_encap_id_absent_with_epgs is changed
-        - "'children' not in path_and_module_encap_id_absent.current.0.fvAEPg"
+        - "'children' not in path_and_module_encap_id_absent_with_epgs.current.0.fvAEPg"
         - path_and_module_encap_id_absent_with_epgs.current.0.fvAEPg.attributes.name == "anstest"
         - path_and_module_encap_id_absent_with_epgs.previous.0.fvAEPg.children | length == 1
         - path_and_module_encap_id_absent_with_epgs.previous.0.fvAEPg.children.0.fvRsPathAtt.attributes.encap == "vlan-107"
