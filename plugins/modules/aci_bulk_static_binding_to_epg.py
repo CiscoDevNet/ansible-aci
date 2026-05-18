@@ -692,7 +692,7 @@ def get_existing_epgs_based(
         if len(static_paths) == 0:
             epg_dns = list(epg_dict_existing_filtered.keys())
             while index < len(epg_dns):
-                batch = epg_dns[index: index + BATCH_SIZE]
+                batch = epg_dns[index : index + BATCH_SIZE]
                 joined_string = ",".join([f'wcard(fvRsPathAtt.dn,"{epg_dn}/rspathAtt-")' for epg_dn in batch])
                 filter_string = f"query-target-filter=or({joined_string})"
 
