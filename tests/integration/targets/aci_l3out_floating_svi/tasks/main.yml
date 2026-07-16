@@ -181,6 +181,8 @@
     register: query_floating
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
+  # This test was inaccurate but keeping to assure behaviour and added new test for query all
+  # The test does not do a class query but is testing the length of children
   - name: Query all floating svis
     cisco.aci.aci_l3out_floating_svi:
       <<: *intf_present
@@ -197,6 +199,20 @@
       - query_floating.current.0.l3extVirtualLIfP.attributes.dn == "uni/tn-ansible_test/out-l3outintftest/lnodep-nodes/lifp-Floating/vlifp-[topology/pod-1/node-201]-[vlan-1]"
       - query_floating.current.0.l3extVirtualLIfP.attributes.encap == "vlan-1"
       - query_all_floating.current.0.l3extLIfP.children | length == 3
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Query all floating svis without filters
+    cisco.aci.aci_l3out_floating_svi:
+      <<: *aci_info
+      state: query
+    register: query_all_no_filter
+    when: version.current.0.topSystem.attributes.version is version('5', '>=')
+
+  - name: Verify query all floating svis without filters
+    ansible.builtin.assert:
+      that:
+      - query_all_no_filter is not changed
+      - query_all_no_filter.current | length >= 2
     when: version.current.0.topSystem.attributes.version is version('5', '>=')
 
   - name: Remove a floating svi

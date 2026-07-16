@@ -21,19 +21,16 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: true
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-    required: true
   extepg:
     description:
     - Name of an existing ExtEpg.
     type: str
     aliases: [ extepg_name ]
-    required: true
   network:
     description:
     - The network address for the Subnet.
@@ -261,9 +258,9 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        tenant=dict(type="str", required=True, aliases=["tenant_name"]),
-        l3out=dict(type="str", required=True, aliases=["l3out_name"]),
-        extepg=dict(type="str", required=True, aliases=["extepg_name"]),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        l3out=dict(type="str", aliases=["l3out_name"]),
+        extepg=dict(type="str", aliases=["extepg_name"]),
         network=dict(type="str", aliases=["address", "ip"]),
         description=dict(type="str", aliases=["descr"]),
         subnet_name=dict(type="str", aliases=["name"]),
@@ -277,8 +274,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "present", ["network"]],
-            ["state", "absent", ["network"]],
+            ["state", "present", ["tenant", "l3out", "extepg", "network"]],
+            ["state", "absent", ["tenant", "l3out", "extepg", "network"]],
         ],
         required_by={"aggregate": "scope"},
     )

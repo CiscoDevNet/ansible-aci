@@ -1,27 +1,27 @@
 name: Generate Changelog
 on:
   push:
-    branches: [master]
+    branches: [main]
 jobs:
   generate-changelog:
     name: Run automation script
     runs-on: ubuntu-latest
     steps:
       - name: Check out script code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ciscoecosystem/release_script
           path: ./release_script
 
       - name: Check out collection code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ./collection
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v5
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.9
+          python-version: 3.10
 
       - name: Install release script requirements
         run: pip install -r ./release_script/requirements.txt

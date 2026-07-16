@@ -408,13 +408,13 @@ def main():
                     #         }
                     #     }
                     # )
-                    aci.api_call("DELETE", "{0}/rssrcToFilterGrp.json".format(source_path))
+                    aci.api_call("DELETE", "{0}/{1}/rssrcToFilterGrp.json".format(aci.base_url, source_path))
                 elif child.get("spanRsSrcToEpg") and child.get("spanRsSrcToEpg").get("attributes").get("tDn") != epg_dn:
                     # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class spanRsSrcToEpg is already attached.
-                    aci.api_call("DELETE", "{0}/rssrcToEpg.json".format(source_path))
+                    aci.api_call("DELETE", "{0}/{1}/rssrcToEpg.json".format(aci.base_url, source_path))
                 elif child.get("spanRsSrcToL3extOut") and child.get("spanRsSrcToL3extOut").get("attributes").get("tDn") != l3ext_out_dn:
                     # Appending to child_config list not possible because of APIC Error 103: child (Rn) of class spanRsSrcToL3extOut is already attached.
-                    aci.api_call("DELETE", "{0}/rssrcToL3extOut.json".format(source_path))
+                    aci.api_call("DELETE", "{0}/{1}/rssrcToL3extOut.json".format(aci.base_url, source_path))
 
         aci.payload(
             aci_class="spanSrc",

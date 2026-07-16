@@ -17,7 +17,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove the ansible_tenant
@@ -169,6 +169,8 @@
         - nm_add_another_subnet is changed
         - nm_add_another_subnet.current.0.l3extSubnet.attributes.ip == "192.1.2.0/24"
 
+  # This test was inaccurate but keeping to assure behaviour and added new test for query all
+  # The test does not do a class query but is testing the length of children
   - name: Query all subnets
     cisco.aci.aci_l3out_extsubnet:
       <<: *aci_info
@@ -316,3 +318,15 @@
     ansible.builtin.assert:
       that:
         - nm_aggregate_scope_match is not changed
+
+  - name: Query all external subnets without filters
+    cisco.aci.aci_l3out_extsubnet:
+      <<: *aci_info
+      state: query
+    register: query_all_no_filter
+
+  - name: Verify query all external subnets without filters
+    ansible.builtin.assert:
+      that:
+        - query_all_no_filter is not changed
+        - query_all_no_filter.current | length >= 2

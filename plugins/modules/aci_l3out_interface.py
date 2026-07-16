@@ -23,25 +23,21 @@ options:
     - Name of an existing tenant.
     type: str
     aliases: [ tenant_name ]
-    required: true
   l3out:
     description:
     - Name of an existing L3Out.
     type: str
     aliases: [ l3out_name ]
-    required: true
   node_profile:
     description:
     - Name of the node profile.
     type: str
     aliases: [ node_profile_name, logical_node ]
-    required: true
   interface_profile:
     description:
     - Name of the interface profile.
     type: str
     aliases: [ interface_profile_name, logical_interface ]
-    required: true
   pod_id:
     description:
     - Pod to build the interface on.
@@ -350,10 +346,10 @@ def main():
     argument_spec = aci_argument_spec()
     argument_spec.update(aci_annotation_spec())
     argument_spec.update(
-        tenant=dict(type="str", aliases=["tenant_name"], required=True),
-        l3out=dict(type="str", aliases=["l3out_name"], required=True),
-        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"], required=True),
-        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"], required=True),
+        tenant=dict(type="str", aliases=["tenant_name"]),
+        l3out=dict(type="str", aliases=["l3out_name"]),
+        node_profile=dict(type="str", aliases=["node_profile_name", "logical_node"]),
+        interface_profile=dict(type="str", aliases=["interface_profile_name", "logical_interface"]),
         state=dict(type="str", default="present", choices=["absent", "present", "query"]),
         pod_id=dict(type="str"),
         node_id=dict(type="str"),
@@ -377,8 +373,8 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["state", "present", ["interface_type", "pod_id", "node_id", "path_ep"]],
-            ["state", "absent", ["pod_id", "node_id", "path_ep"]],
+            ["state", "present", ["tenant", "l3out", "node_profile", "interface_profile", "interface_type", "pod_id", "node_id", "path_ep"]],
+            ["state", "absent", ["tenant", "l3out", "node_profile", "interface_profile", "pod_id", "node_id", "path_ep"]],
             ["micro_bfd", True, ["micro_bfd_destination"]],
         ],
         required_by={"micro_bfd_timer": "micro_bfd", "micro_bfd_destination": "micro_bfd"},

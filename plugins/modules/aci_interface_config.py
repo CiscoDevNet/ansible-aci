@@ -49,7 +49,10 @@ options:
     aliases: [ port_channel_member ]
   port_type:
     description:
-    - The type of the interface can be either access or fabric.
+    - The type of the interface.
+    - The C(access) maps to B(infra:PortConfig) and C(fabric) maps to B(fabric:PortConfig).
+    - The I(port_type) is not validated against the port type of an existing interface.
+    - Be careful when relying on the default C(access), as it can convert an existing fabric port to an access port.
     type: str
     default: access
     choices: [ access, fabric ]

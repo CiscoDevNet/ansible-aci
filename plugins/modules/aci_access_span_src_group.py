@@ -293,7 +293,7 @@ def main():
                     #         }
                     #     }
                     # )
-                    aci.api_call("DELETE", "/api/mo/uni/infra/srcgrp-{0}/rssrcGrpToFilterGrp.json".format(source_group))
+                    aci.api_call("DELETE", "{0}/api/mo/uni/infra/srcgrp-{1}/rssrcGrpToFilterGrp.json".format(aci.base_url, source_group))
                 elif child.get("spanSpanLbl") and child.get("spanSpanLbl").get("attributes").get("name") != destination_group:
                     child_configs.append(
                         {

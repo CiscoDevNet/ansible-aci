@@ -19,7 +19,7 @@
       validate_certs: '{{ aci_validate_certs | default(false) }}'
       use_ssl: '{{ aci_use_ssl | default(true) }}'
       use_proxy: '{{ aci_use_proxy | default(true) }}'
-      output_level: debug
+      output_level: '{{ aci_output_level | default("info") }}'
 
 # CLEAN ENVIRONMENT
 - name: Remove ansible_tenant if it already exists
@@ -232,6 +232,8 @@
       - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.encap == "vlan-913"
       - query_l3out_interface.current.0.l3extRsPathL3OutAtt.attributes.mode == "regular"
 
+  # This test was inaccurate but keeping to assure behaviour and added new test for query all
+  # The test does not do a class query but is testing the length of children
   - name: Query all interfaces
     cisco.aci.aci_l3out_interface:
       <<: *aci_info
@@ -644,15 +646,20 @@
       register: err_micro_bfd_destination_not_provided_micro_bfd
       ignore_errors: true
 
+    - name: Set error message for Verify micro BFD errors
+      ansible.builtin.set_fact:
+        micro_bfd_timer_not_provided_micro_bfd_error: "missing parameter(s) required by 'micro_bfd_timer': micro_bfd"
+        err_micro_bfd_destination_not_provided_micro_bfd_error: "missing parameter(s) required by 'micro_bfd_destination': micro_bfd"
+
     - name: Verify micro BFD errors
       assert:
         that:
         - err_micro_bfd_not_provided_destination is failed
-        - err_micro_bfd_not_provided_destination.msg == "micro_bfd is True but all of the following are missing{{":"}} micro_bfd_destination"
+        - 'err_micro_bfd_not_provided_destination.msg == "micro_bfd is True but all of the following are missing: micro_bfd_destination"'
         - err_micro_bfd_timer_not_provided_micro_bfd is failed
-        - err_micro_bfd_timer_not_provided_micro_bfd.msg == "missing parameter(s) required by 'micro_bfd_timer'{{":"}} micro_bfd"
+        - err_micro_bfd_timer_not_provided_micro_bfd.msg == micro_bfd_timer_not_provided_micro_bfd_error
         - err_micro_bfd_destination_not_provided_micro_bfd is failed
-        - err_micro_bfd_destination_not_provided_micro_bfd.msg == "missing parameter(s) required by 'micro_bfd_destination'{{":"}} micro_bfd"
+        - err_micro_bfd_destination_not_provided_micro_bfd.msg == err_micro_bfd_destination_not_provided_micro_bfd_error
 
     - name: Enable micro BFD on direct port channel interface in the infra SR-MPLS l3out interface (check_mode)
       aci_l3out_interface: &enable_bfd
@@ -739,6 +746,47 @@
     - name: Remove a infra SR-MPLS l3out
       cisco.aci.aci_l3out:
         <<: *aci_infra_sr_mpls_l3out_absent
+
+  # QUERY ALL l3out interfaces without filters
+  - name: Create first l3out interface for query all test
+    cisco.aci.aci_l3out_interface:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: eth1/15
+      interface_type: l3-port
+      address: 192.168.50.1/27
+      state: present
+
+  - name: Create second l3out interface for query all test
+    cisco.aci.aci_l3out_interface:
+      <<: *aci_info
+      tenant: ansible_tenant
+      l3out: ansible_l3out
+      node_profile: ansible_node_profile
+      interface_profile: ansible_interface_profile
+      pod_id: 1
+      node_id: 201
+      path_ep: eth1/16
+      interface_type: l3-port
+      address: 192.168.51.1/27
+      state: present
+
+  - name: Query all l3out interfaces without filters
+    cisco.aci.aci_l3out_interface:
+      <<: *aci_info
+      state: query
+    register: query_all_no_filter
+
+  - name: Verify query all l3out interfaces without filters
+    ansible.builtin.assert:
+      that:
+      - query_all_no_filter is not changed
+      - query_all_no_filter.current | length >= 2
 
   # CLEAN UP
   - name: Remove ansible_tenant
