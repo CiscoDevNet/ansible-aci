@@ -38,6 +38,8 @@ options:
     description:
     - URI being used to execute API calls.
     - Must end in C(.xml) or C(.json).
+    - Some APIC APIs, for example C(/api/workflows/*), do not use a file extension.
+      Use O(json_format) to indicate that such a path should be treated as JSON.
     type: str
     required: true
     aliases: [ uri ]
@@ -59,6 +61,13 @@ options:
   rsp_subtree_preserve:
     description:
     - Preserve the response for the provided path.
+    type: bool
+    default: false
+  json_format:
+    description:
+    - Treat O(path) as a JSON payload/response type when it does not end in C(.xml) or C(.json).
+    - This is needed for APIC APIs, for example C(/api/workflows/*), that do not use a file extension.
+    - This parameter has no effect when O(path) already ends in C(.xml) or C(.json).
     type: bool
     default: false
   page_size:
@@ -227,6 +236,17 @@ EXAMPLES = r"""
   delay: 30
   delegate_to: localhost
   run_once: true
+
+- name: Check the cluster status using a path without a file extension
+  cisco.aci.aci_rest:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    method: get
+    path: /api/workflows/v1/cluster/status
+    json_format: true
+  delegate_to: localhost
+  register: cluster_status
 """
 
 RETURN = r"""
@@ -407,6 +427,7 @@ def main():
         src=dict(type="path", aliases=["config_file"]),
         content=dict(type="raw"),
         rsp_subtree_preserve=dict(type="bool", default=False),
+        json_format=dict(type="bool", default=False),
         page_size=dict(type="int"),
         page=dict(type="int"),
         # To support Ansible Core 2.19.0 and later, Jinja2 3.1.6 and later versions.
@@ -426,6 +447,7 @@ def main():
     path = module.params.get("path")
     src = module.params.get("src")
     rsp_subtree_preserve = module.params.get("rsp_subtree_preserve")
+    json_format = module.params.get("json_format")
     annotation = module.params.get("annotation")
     page_size = module.params.get("page_size")
     page = module.params.get("page")
@@ -449,6 +471,9 @@ def main():
         if not HAS_XMLJSON_COBRA:
             module.fail_json(msg="The xmljson python library is missing, or lacks cobra support.")
     elif path.find(".json") != -1:
+        rest_type = "json"
+    elif json_format and "." not in path.rsplit("/", 1)[-1]:
+        # Some newer APIC APIs (e.g. /api/workflows/*) do not use a .json or .xml extension.
         rest_type = "json"
     else:
         module.fail_json(msg="Failed to find REST API payload type (neither .xml nor .json).")
