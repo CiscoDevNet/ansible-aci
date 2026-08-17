@@ -3,7 +3,7 @@
 
 # Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
 # Copyright: (c) 2020, Cindy Zhao (@cizhao) <cizhao@cisco.com>
-# Copyright: (c) 2023, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
+# Copyright: (c) 2023, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -61,6 +61,8 @@ options:
   rsp_subtree_preserve:
     description:
     - Preserve the response for the provided path.
+    - This has no effect when O(json_format) is used for a path without a C(.xml) or C(.json) extension,
+      as the C(rsp-subtree) query parameter only applies to standard ACI Managed Object (MO) requests.
     type: bool
     default: false
   json_format:
@@ -107,7 +109,7 @@ seealso:
 author:
 - Dag Wieers (@dagwieers)
 - Cindy Zhao (@cizhao)
-- Samita Bhattacharjee (@samitab)
+- Samita Bhattacharjee (@samiib)
 """
 
 EXAMPLES = r"""
@@ -245,7 +247,6 @@ EXAMPLES = r"""
     method: get
     path: /api/workflows/v1/cluster/status
     json_format: true
-  delegate_to: localhost
   register: cluster_status
 """
 
@@ -367,6 +368,8 @@ def add_annotation(annotation, payload):
             if key in ANNOTATION_UNSUPPORTED:
                 continue
             if isinstance(val, dict):
+                if "attributes" not in val.keys():
+                    continue
                 att = val.get("attributes", {})
                 if "annotation" not in att.keys():
                     att["annotation"] = annotation
@@ -464,18 +467,30 @@ def main():
             module.fail_json(msg="Cannot find/access src '{0}'".format(src))
 
     # Find request type
-    if path.find(".xml") != -1:
+    # Track whether the path targets a standard ACI Managed Object (MO), as opposed to a non-MO
+    # JSON API (e.g. /api/workflows/*) reached via json_format. MO-specific query parameters, such
+    # as rsp-subtree, should not be applied to non-MO paths.
+    is_mo_payload = True
+    # Only inspect the path component (without any query string) so query values containing
+    # ".xml"/".json" (e.g. filter values) cannot be mistaken for the path's actual extension.
+    path_no_query = urlparse(path).path if HAS_URLPARSE else path.split("?", 1)[0]
+    if path_no_query.endswith(".xml"):
         rest_type = "xml"
         if not HAS_LXML_ETREE:
             module.fail_json(msg="The lxml python library is missing, or lacks etree support.")
         if not HAS_XMLJSON_COBRA:
             module.fail_json(msg="The xmljson python library is missing, or lacks cobra support.")
-    elif path.find(".json") != -1:
+    elif path_no_query.endswith(".json"):
         rest_type = "json"
-    elif json_format and "." not in path.rsplit("/", 1)[-1]:
+    elif json_format:
         # Some newer APIC APIs (e.g. /api/workflows/*) do not use a .json or .xml extension.
+        # By this point the path is already known not to end in .xml or .json (checked above),
+        # so json_format alone is sufficient regardless of any other "." in the path.
         rest_type = "json"
+        is_mo_payload = False
     else:
+        if not json_format:
+            module.warn("Path '{0}' does not end in .xml or .json. Set O(json_format=true) if this is intentional.".format(path))
         module.fail_json(msg="Failed to find REST API payload type (neither .xml nor .json).")
 
     aci = ACIRESTModule(module)
@@ -520,7 +535,7 @@ def main():
     if aci.params.get("method") == "get" and page_size:
         aci.path = update_qsl(aci.path, {"page": page, "page-size": page_size})
         aci.url = update_qsl(aci.url, {"page": page, "page-size": page_size})
-    if aci.params.get("method") != "get" and not rsp_subtree_preserve:
+    if aci.params.get("method") != "get" and not rsp_subtree_preserve and is_mo_payload:
         aci.path = "{0}?rsp-subtree=modified".format(aci.path)
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 

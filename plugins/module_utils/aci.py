@@ -655,11 +655,15 @@ class ACIModule(object):
         if isinstance(jsondata, list):
             self.imdata = jsondata
             self.totalCount = len(jsondata)
-        else:
+        elif "imdata" in jsondata:
             self.imdata = jsondata.get("imdata", {})
             total_count = jsondata.get("totalCount")
             if total_count is not None:
                 self.totalCount = int(total_count)
+        else:
+            # Non-MO JSON responses (e.g. json_format paths without a .json/.xml extension) do not
+            # follow the standard imdata/totalCount structure, return the raw JSON data as-is.
+            self.imdata = jsondata
 
         # Handle possible APIC error information
         self.response_error()

@@ -218,7 +218,9 @@ class HttpApi(HttpApiBase):
         return exc
 
     def validate_url(self, url):
-        validated_url = re.match(r"^.*?\.json|^.*?\.xml", url).group(0)
+        match = re.match(r"^.*?\.json|^.*?\.xml", url)
+        # Some paths (e.g. when json_format is used) do not end in .json or .xml, fall back to the url without its query string.
+        validated_url = match.group(0) if match else url.split("?")[0]
         if self.connection_parameters.get("port") is None:
             return validated_url.replace(re.match(r"(https?:\/\/.*)(:\d*)\/?(.*)", url).group(2), "")
         else:

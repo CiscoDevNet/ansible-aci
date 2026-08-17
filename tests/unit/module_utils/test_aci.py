@@ -341,3 +341,16 @@ authentication"
         aci.response_xml(xml_response)
         self.assertEqual(aci.error, error)
         self.assertEqual(aci.result["raw"], raw)
+
+    def test_non_mo_json_response(self):
+        # Non-MO JSON responses (e.g. json_format paths without a .json/.xml extension, such as APIC
+        # workflow APIs) do not follow the standard imdata/totalCount structure.
+        self.maxDiff = None
+        aci.totalCount = None
+
+        imdata = {"clusterHealth": {"status": "fully-fit"}}
+
+        json_response = '{"clusterHealth":{"status":"fully-fit"}}'
+        aci.response_json(json_response)
+        self.assertEqual(aci.imdata, imdata)
+        self.assertIsNone(aci.totalCount)
