@@ -467,6 +467,7 @@ class ACIModule(object):
         # aci_rest output
         self.imdata = None
         self.totalCount = None
+        self.jsondata = None
 
         # get no verify flag
         self.suppress_verification = self.params.get("suppress_verification")
@@ -641,7 +642,7 @@ class ACIModule(object):
             + "APIC-Request-Signature={0}".format(to_native(base64.b64encode(sig_signature)))
         )
 
-    def response_json(self, rawoutput):
+    def response_json(self, rawoutput, standard_api=True):
         """Handle APIC JSON response output"""
         try:
             jsondata = json.loads(rawoutput)
@@ -651,19 +652,21 @@ class ACIModule(object):
             self.result["raw"] = rawoutput
             return
 
+        if not standard_api:
+            # Non-MO/Class JSON responses (e.g. json_format paths without a .json/.xml extension) do not
+            # follow the standard imdata/totalCount structure, return the raw JSON data as-is.
+            self.jsondata = jsondata
+            return
+
         # Extract JSON API output
         if isinstance(jsondata, list):
             self.imdata = jsondata
             self.totalCount = len(jsondata)
-        elif "imdata" in jsondata:
+        else:
             self.imdata = jsondata.get("imdata", {})
             total_count = jsondata.get("totalCount")
             if total_count is not None:
                 self.totalCount = int(total_count)
-        else:
-            # Non-MO JSON responses (e.g. json_format paths without a .json/.xml extension) do not
-            # follow the standard imdata/totalCount structure, return the raw JSON data as-is.
-            self.imdata = jsondata
 
         # Handle possible APIC error information
         self.response_error()

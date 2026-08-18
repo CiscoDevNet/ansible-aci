@@ -52,7 +52,7 @@ class TestAciRestJsonFormat(ModuleTestCase):
         result = self.execute_module(response_body)
 
         # Non-MO responses do not have an "imdata" key, the raw body is returned as-is.
-        self.assertEqual(result["imdata"], response_body)
+        self.assertEqual(result["data"], response_body)
 
     def test_json_format_post_does_not_add_rsp_subtree(self):
         # rsp-subtree=modified is an ACI MO-specific query parameter and must not be appended
@@ -129,7 +129,7 @@ class TestAciRestJsonFormat(ModuleTestCase):
         response_body = {"clusterHealth": {"status": "fully-fit"}}
         result = self.execute_module(response_body)
 
-        self.assertEqual(result["imdata"], response_body)
+        self.assertEqual(result["data"], response_body)
 
     def test_json_format_path_with_dot_in_a_non_final_path_segment(self):
         # A "." earlier in the path (e.g. an API version segment) but not in the final segment
@@ -148,7 +148,7 @@ class TestAciRestJsonFormat(ModuleTestCase):
         response_body = {"clusterHealth": {"status": "fully-fit"}}
         result = self.execute_module(response_body)
 
-        self.assertEqual(result["imdata"], response_body)
+        self.assertEqual(result["data"], response_body)
 
     def test_json_format_path_with_dot_in_final_path_segment(self):
         # A "." in the final path segment that is not a .json/.xml extension (e.g. a domain-like
@@ -167,7 +167,7 @@ class TestAciRestJsonFormat(ModuleTestCase):
         response_body = {"clusterHealth": {"status": "fully-fit"}}
         result = self.execute_module(response_body)
 
-        self.assertEqual(result["imdata"], response_body)
+        self.assertEqual(result["data"], response_body)
 
     def test_json_extension_path_returns_imdata(self):
         # Baseline/regression check: standard MO responses are unaffected by the json_format change.

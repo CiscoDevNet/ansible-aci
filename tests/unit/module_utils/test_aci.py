@@ -348,9 +348,9 @@ authentication"
         self.maxDiff = None
         aci.totalCount = None
 
-        imdata = {"clusterHealth": {"status": "fully-fit"}}
+        jsondata = {"clusterHealth": {"status": "fully-fit"}}
 
         json_response = '{"clusterHealth":{"status":"fully-fit"}}'
-        aci.response_json(json_response)
-        self.assertEqual(aci.imdata, imdata)
+        aci.response_json(json_response, standard_api=False)
+        self.assertEqual(aci.jsondata, jsondata)
         self.assertIsNone(aci.totalCount)

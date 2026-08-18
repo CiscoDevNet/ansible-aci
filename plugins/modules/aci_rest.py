@@ -62,7 +62,7 @@ options:
     description:
     - Preserve the response for the provided path.
     - This has no effect when O(json_format) is used for a path without a C(.xml) or C(.json) extension,
-      as the C(rsp-subtree) query parameter only applies to standard ACI Managed Object (MO) requests.
+      as the C(rsp-subtree) query parameter only applies to standard ACI requests.
     type: bool
     default: false
   json_format:
@@ -70,15 +70,21 @@ options:
     - Treat O(path) as a JSON payload/response type when it does not end in C(.xml) or C(.json).
     - This is needed for APIC APIs, for example C(/api/workflows/*), that do not use a file extension.
     - This parameter has no effect when O(path) already ends in C(.xml) or C(.json).
+    - When O(path) does not end in C(.xml) or C(.json), the response is returned under RV(data) instead of RV(imdata)/RV(totalCount),
+      as such APIs do not follow the standard ACI Managed Object (MO) response structure.
     type: bool
     default: false
   page_size:
     description:
     - The number of items to return in a single page.
+    - This has no effect when O(json_format) is used for a path without a C(.xml) or C(.json) extension,
+      as the C(page)/C(page-size) query parameters only apply to standard ACI requests.
     type: int
   page:
     description:
     - The page number to return.
+    - This has no effect when O(json_format) is used for a path without a C(.xml) or C(.json) extension,
+      as the C(page)/C(page-size) query parameters only apply to standard requests.
     type: int
   normalize_payload_values:
     description:
@@ -253,19 +259,24 @@ EXAMPLES = r"""
 RETURN = r"""
 error_code:
   description: The REST ACI return code, useful for troubleshooting on failure
-  returned: always
+  returned: failure, when the path is a standard ACI Managed Object (MO) or Class API (i.e. ends in C(.xml) or C(.json))
   type: int
   sample: 122
 error_text:
   description: The REST ACI descriptive text, useful for troubleshooting on failure
-  returned: always
+  returned: failure, when the path is a standard ACI Managed Object (MO) or Class API (i.e. ends in C(.xml) or C(.json))
   type: str
   sample: unknown managed object class foo
 imdata:
   description: Converted output returned by the APIC REST (register this for post-processing)
-  returned: always
+  returned: when the path is a standard ACI Managed Object (MO) or Class API (i.e. ends in C(.xml) or C(.json))
   type: str
   sample: [{"error": {"attributes": {"code": "122", "text": "unknown managed object class foo"}}}]
+data:
+  description: JSON output returned by APIC APIs that do not follow the standard MO/Class response structure
+  returned: when O(json_format=true) is used with a O(path) that does not end in C(.xml) or C(.json)
+  type: raw
+  sample: {"clusterHealth": {"status": "fully-fit"}}
 payload:
   description: The (templated) payload send to the APIC REST API (xml or json)
   returned: always
@@ -288,7 +299,7 @@ status:
   sample: 400
 totalCount:
   description: Number of items in the imdata array
-  returned: always
+  returned: when the path is a standard ACI Managed Object (MO) or Class API (i.e. ends in C(.xml) or C(.json))
   type: str
   sample: '0'
 url:
@@ -408,16 +419,16 @@ class ACIRESTModule(ACIModule):
 
         return False
 
-    def response_type(self, rawoutput, rest_type="xml"):
+    def response_type(self, rawoutput, rest_type="xml", standard_api=True):
         """Handle APIC response output"""
 
         if rest_type == "json":
-            self.response_json(rawoutput)
+            self.response_json(rawoutput, standard_api)
         else:
             self.response_xml(rawoutput)
 
         # Use APICs built-in idempotency
-        if HAS_URLPARSE:
+        if HAS_URLPARSE and standard_api:
             self.result["changed"] = self.changed(self.imdata)
 
 
@@ -467,10 +478,10 @@ def main():
             module.fail_json(msg="Cannot find/access src '{0}'".format(src))
 
     # Find request type
-    # Track whether the path targets a standard ACI Managed Object (MO), as opposed to a non-MO
+    # Track whether the path targets a standard ACI Managed Object (MO) or Class, as opposed to a general
     # JSON API (e.g. /api/workflows/*) reached via json_format. MO-specific query parameters, such
     # as rsp-subtree, should not be applied to non-MO paths.
-    is_mo_payload = True
+    standard_api = True
     # Only inspect the path component (without any query string) so query values containing
     # ".xml"/".json" (e.g. filter values) cannot be mistaken for the path's actual extension.
     path_no_query = urlparse(path).path if HAS_URLPARSE else path.split("?", 1)[0]
@@ -487,7 +498,7 @@ def main():
         # By this point the path is already known not to end in .xml or .json (checked above),
         # so json_format alone is sufficient regardless of any other "." in the path.
         rest_type = "json"
-        is_mo_payload = False
+        standard_api = False
     else:
         if not json_format:
             module.warn("Path '{0}' does not end in .xml or .json. Set O(json_format=true) if this is intentional.".format(path))
@@ -532,10 +543,10 @@ def main():
     aci.path = path.lstrip("/")
     aci.url = "{0}/{1}".format(aci.base_url, aci.path)
 
-    if aci.params.get("method") == "get" and page_size:
+    if aci.params.get("method") == "get" and page_size and standard_api:
         aci.path = update_qsl(aci.path, {"page": page, "page-size": page_size})
         aci.url = update_qsl(aci.url, {"page": page, "page-size": page_size})
-    if aci.params.get("method") != "get" and not rsp_subtree_preserve and is_mo_payload:
+    if aci.params.get("method") != "get" and not rsp_subtree_preserve and standard_api:
         aci.path = "{0}?rsp-subtree=modified".format(aci.path)
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
@@ -546,21 +557,28 @@ def main():
         # Report failure
         if info.get("status") != 200:
             try:
+                aci.response_type(info["body"], rest_type, standard_api)
+                if not standard_api:
+                    aci.result["data"] = aci.jsondata
+                    aci.fail_json(msg="HTTP Error: {0}".format(aci.status))
                 # APIC error
-                aci.response_type(info["body"], rest_type)
                 aci.fail_json(msg="APIC Error {code}: {text}".format_map(aci.error))
             except KeyError:
                 # Connection error
                 aci.fail_json(msg="Connection failed for {url}. {msg}".format_map(info))
 
         try:
-            aci.response_type(resp.read(), rest_type)
+            aci.response_type(resp.read(), rest_type, standard_api)
         except AttributeError:
-            aci.response_type(info.get("body"), rest_type)
+            aci.response_type(info.get("body"), rest_type, standard_api)
 
         aci.result["status"] = aci.status
-        aci.result["imdata"] = aci.imdata
-        aci.result["totalCount"] = aci.totalCount
+
+        if standard_api:
+            aci.result["imdata"] = aci.imdata
+            aci.result["totalCount"] = aci.totalCount
+        else:
+            aci.result["data"] = aci.jsondata
 
     else:
         # NOTE A case when aci_rest is used with check mode and the apic host is used directly from the inventory
