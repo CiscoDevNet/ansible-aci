@@ -411,6 +411,6 @@
     - nm_add_tenant_annotation_option_content.imdata.0.fvTenant.attributes.annotation == "test:optionincontent"
     - nm_add_tag_no_annotation.imdata.0.tagTag.attributes.annotation is undefined
     - nm_add_tenant_annotation_children.imdata.0.fvTenant.attributes.annotation == "test:inoption"
-    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.attributes.annotation == "test:inoption"
-    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.0.fvAp.children.0.fvAEPg.attributes.annotation == "test:inchild"
-    - nm_add_tenant_annotation_children.imdata.0.fvTenant.children.2.fvCtx.attributes.annotation == "test:inoption"
+    - (nm_add_tenant_annotation_children.imdata.0.fvTenant.children | selectattr('fvAp', 'defined') | map(attribute='fvAp') | first).attributes.annotation == "test:inoption"
+    - (nm_add_tenant_annotation_children.imdata.0.fvTenant.children | selectattr('fvAp', 'defined') | map(attribute='fvAp') | first).children.0.fvAEPg.attributes.annotation == "test:inchild"
+    - (nm_add_tenant_annotation_children.imdata.0.fvTenant.children | selectattr('fvCtx', 'defined') | map(attribute='fvCtx') | first).attributes.annotation == "test:inoption"

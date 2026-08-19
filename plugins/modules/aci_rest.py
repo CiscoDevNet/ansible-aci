@@ -37,9 +37,12 @@ options:
   path:
     description:
     - URI being used to execute API calls.
-    - Must end in C(.xml) or C(.json).
-    - Some APIC APIs, for example C(/api/workflows/*), do not use a file extension.
-      Use O(json_format) to indicate that such a path should be treated as JSON.
+    - Standard ACI Managed Object (MO) and Class API paths (e.g. C(/api/mo/*) or C(/api/class/*),
+      optionally under C(/api/node/)) must end in C(.xml) or C(.json).
+    - Other paths that end in C(.xml) or C(.json), for example C(/connector/Systems.json), are also
+      treated as standard responses even though they are not an MO or Class API path.
+    - Any other path, for example C(/api/workflows/*), is not required to use a file extension
+      and is treated as a generic JSON API.
     type: str
     required: true
     aliases: [ uri ]
@@ -61,30 +64,21 @@ options:
   rsp_subtree_preserve:
     description:
     - Preserve the response for the provided path.
-    - This has no effect when O(json_format) is used for a path without a C(.xml) or C(.json) extension,
-      as the C(rsp-subtree) query parameter only applies to standard ACI requests.
-    type: bool
-    default: false
-  json_format:
-    description:
-    - Treat O(path) as a JSON payload/response type when it does not end in C(.xml) or C(.json).
-    - This is needed for APIC APIs, for example C(/api/workflows/*), that do not use a file extension.
-    - This parameter has no effect when O(path) already ends in C(.xml) or C(.json).
-    - When O(path) does not end in C(.xml) or C(.json), the response is returned under RV(data) instead of RV(imdata)/RV(totalCount),
-      as such APIs do not follow the standard ACI Managed Object (MO) response structure.
+    - This has no effect when O(path) does not end in C(.xml) or C(.json), as the C(rsp-subtree)
+      query parameter only applies to paths that return a standard MO/Class response.
     type: bool
     default: false
   page_size:
     description:
     - The number of items to return in a single page.
-    - This has no effect when O(json_format) is used for a path without a C(.xml) or C(.json) extension,
-      as the C(page)/C(page-size) query parameters only apply to standard ACI requests.
+    - This has no effect when O(path) does not end in C(.xml) or C(.json), as the C(page)/C(page-size)
+      query parameters only apply to paths that return a standard MO/Class response.
     type: int
   page:
     description:
     - The page number to return.
-    - This has no effect when O(json_format) is used for a path without a C(.xml) or C(.json) extension,
-      as the C(page)/C(page-size) query parameters only apply to standard requests.
+    - This has no effect when O(path) does not end in C(.xml) or C(.json), as the C(page)/C(page-size)
+      query parameters only apply to paths that return a standard MO/Class response.
     type: int
   normalize_payload_values:
     description:
@@ -107,6 +101,14 @@ notes:
 - If you do not have any attributes, it may be necessary to add the "attributes" key with an empty dictionnary "{}" for value
   as the APIC does expect the entry to precede any children.
 - Annotation set directly in c(src) or C(content) will take precedent over the C(annotation) parameter.
+- O(path) is treated as returning a standard MO/Class response when it either matches C(/api/[node/]mo/*)
+  or C(/api/[node/]class/*) and ends in C(.xml) or C(.json), or when it simply ends in C(.xml) or C(.json)
+  regardless of the path prefix (for example C(/connector/Systems.json), see
+  U(https://github.com/CiscoDevNet/ansible-aci/issues/685)). An MO/Class path (C(/api/[node/]mo/*) or
+  C(/api/[node/]class/*)) without a C(.xml) or C(.json) extension is invalid and fails. Any other path
+  without a C(.xml) or C(.json) extension, for example C(/api/workflows/*), is treated as a generic JSON
+  API, its response is returned under RV(data) instead of RV(imdata)/RV(totalCount), and MO-specific
+  behavior (such as C(rsp-subtree)/pagination query parameters and error code/text extraction) does not apply.
 seealso:
 - module: cisco.aci.aci_tenant
 - name: Cisco APIC REST API Configuration Guide
@@ -252,29 +254,28 @@ EXAMPLES = r"""
     password: SomeSecretPassword
     method: get
     path: /api/workflows/v1/cluster/status
-    json_format: true
   register: cluster_status
 """
 
 RETURN = r"""
 error_code:
   description: The REST ACI return code, useful for troubleshooting on failure
-  returned: failure, when the path is a standard ACI Managed Object (MO) or Class API (i.e. ends in C(.xml) or C(.json))
+  returned: failure, when O(path) ends in C(.xml) or C(.json)
   type: int
   sample: 122
 error_text:
   description: The REST ACI descriptive text, useful for troubleshooting on failure
-  returned: failure, when the path is a standard ACI Managed Object (MO) or Class API (i.e. ends in C(.xml) or C(.json))
+  returned: failure, when O(path) ends in C(.xml) or C(.json)
   type: str
   sample: unknown managed object class foo
 imdata:
   description: Converted output returned by the APIC REST (register this for post-processing)
-  returned: when the path is a standard ACI Managed Object (MO) or Class API (i.e. ends in C(.xml) or C(.json))
+  returned: when O(path) ends in C(.xml) or C(.json)
   type: str
   sample: [{"error": {"attributes": {"code": "122", "text": "unknown managed object class foo"}}}]
 data:
   description: JSON output returned by APIC APIs that do not follow the standard MO/Class response structure
-  returned: when O(json_format=true) is used with a O(path) that does not end in C(.xml) or C(.json)
+  returned: when O(path) does not end in C(.xml) or C(.json)
   type: raw
   sample: {"clusterHealth": {"status": "fully-fit"}}
 payload:
@@ -299,7 +300,7 @@ status:
   sample: 400
 totalCount:
   description: Number of items in the imdata array
-  returned: when the path is a standard ACI Managed Object (MO) or Class API (i.e. ends in C(.xml) or C(.json))
+  returned: when O(path) ends in C(.xml) or C(.json)
   type: str
   sample: '0'
 url:
@@ -355,6 +356,13 @@ from ansible.module_utils._text import to_text
 from ansible_collections.cisco.aci.plugins.module_utils.annotation_unsupported import (
     ANNOTATION_UNSUPPORTED,
 )
+
+# Matches ACI Managed Object (MO) and Class API paths, for example:
+#   /api/mo/uni/tn-test.json
+#   /api/node/class/topSystem.json
+# These paths require a .xml or .json extension (checked separately). Any other path that also lacks
+# a .xml/.json extension (e.g. /api/workflows/v1/cluster/status) is treated as a generic JSON API.
+STANDARD_API_PATH_RE = re.compile(r"^/?api/(?:node/)?(?:mo|class)(?:/|$)")
 
 
 def update_qsl(url, params):
@@ -441,7 +449,6 @@ def main():
         src=dict(type="path", aliases=["config_file"]),
         content=dict(type="raw"),
         rsp_subtree_preserve=dict(type="bool", default=False),
-        json_format=dict(type="bool", default=False),
         page_size=dict(type="int"),
         page=dict(type="int"),
         # To support Ansible Core 2.19.0 and later, Jinja2 3.1.6 and later versions.
@@ -461,7 +468,6 @@ def main():
     path = module.params.get("path")
     src = module.params.get("src")
     rsp_subtree_preserve = module.params.get("rsp_subtree_preserve")
-    json_format = module.params.get("json_format")
     annotation = module.params.get("annotation")
     page_size = module.params.get("page_size")
     page = module.params.get("page")
@@ -478,31 +484,35 @@ def main():
             module.fail_json(msg="Cannot find/access src '{0}'".format(src))
 
     # Find request type
-    # Track whether the path targets a standard ACI Managed Object (MO) or Class, as opposed to a general
-    # JSON API (e.g. /api/workflows/*) reached via json_format. MO-specific query parameters, such
-    # as rsp-subtree, should not be applied to non-MO paths.
-    standard_api = True
+    # Detect whether the path returns a standard MO/Class-shaped response (imdata/totalCount), as
+    # opposed to a general JSON API (e.g. /api/workflows/*) whose response is returned as-is under
+    # "data". MO-specific query parameters, such as rsp-subtree, pagination, and error extraction
+    # should not be applied to non-standard responses.
     # Only inspect the path component (without any query string) so query values containing
     # ".xml"/".json" (e.g. filter values) cannot be mistaken for the path's actual extension.
     path_no_query = urlparse(path).path if HAS_URLPARSE else path.split("?", 1)[0]
+    is_mo_class_path = STANDARD_API_PATH_RE.match(path_no_query) is not None
     if path_no_query.endswith(".xml"):
         rest_type = "xml"
+        standard_api = True
         if not HAS_LXML_ETREE:
             module.fail_json(msg="The lxml python library is missing, or lacks etree support.")
         if not HAS_XMLJSON_COBRA:
             module.fail_json(msg="The xmljson python library is missing, or lacks cobra support.")
     elif path_no_query.endswith(".json"):
+        # A ".json" extension is a strong enough signal on its own that the response follows the
+        # standard MO/Class response structure, even for paths that do not match the MO/Class path
+        # pattern (e.g. /connector/Systems.json, see https://github.com/CiscoDevNet/ansible-aci/issues/685).
         rest_type = "json"
-    elif json_format:
-        # Some newer APIC APIs (e.g. /api/workflows/*) do not use a .json or .xml extension.
-        # By this point the path is already known not to end in .xml or .json (checked above),
-        # so json_format alone is sufficient regardless of any other "." in the path.
+        standard_api = True
+    elif is_mo_class_path:
+        # An MO/Class path without a .xml or .json extension is invalid.
+        module.fail_json(msg="Failed to find REST API payload type (neither .xml nor .json).")
+    else:
+        # Other APIC APIs (e.g. /api/workflows/*) are not required to use a file extension
+        # and are treated as generic JSON APIs.
         rest_type = "json"
         standard_api = False
-    else:
-        if not json_format:
-            module.warn("Path '{0}' does not end in .xml or .json. Set O(json_format=true) if this is intentional.".format(path))
-        module.fail_json(msg="Failed to find REST API payload type (neither .xml nor .json).")
 
     aci = ACIRESTModule(module)
     aci.result["status"] = -1  # Ensure we always return a status

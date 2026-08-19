@@ -219,7 +219,7 @@ class HttpApi(HttpApiBase):
 
     def validate_url(self, url):
         match = re.match(r"^.*?\.json|^.*?\.xml", url)
-        # Some paths (e.g. when json_format is used) do not end in .json or .xml, fall back to the url without its query string.
+        # Some paths (e.g. generic JSON APIs like /api/workflows/*) do not end in .json or .xml, fall back to the url without its query string.
         validated_url = match.group(0) if match else url.split("?")[0]
         if self.connection_parameters.get("port") is None:
             return validated_url.replace(re.match(r"(https?:\/\/.*)(:\d*)\/?(.*)", url).group(2), "")

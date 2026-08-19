@@ -270,20 +270,12 @@
 
 # Test cases for path without a file extension
 
-- name: Query top system class using a path without a file extension and without json_format
+- name: Query top system class using a path without a file extension
   cisco.aci.aci_rest:
     <<: *aci_info
     path: /api/class/topSystem
   ignore_errors: true
   register: err_no_extension
-
-- name: Query top system class using a path without a file extension and with json_format
-  cisco.aci.aci_rest:
-    <<: *aci_info
-    path: /api/class/topSystem
-    json_format: true
-  ignore_errors: true
-  register: query_no_extension_json_format
 
 # Parse failures
 
@@ -312,8 +304,6 @@
       - err_src_attribute.msg == "Cannot find/access src './targets/aci_rest/invalid_src.txt'"
       - err_extension.msg == "Failed to find REST API payload type (neither .xml nor .json)."
       - err_no_extension.msg == "Failed to find REST API payload type (neither .xml nor .json)."
-      - query_no_extension_json_format is failed
-      - "query_no_extension_json_format.msg == 'APIC Error 6: Output format was not specified (possible options: .xml|.json)'"
       - err_fail_parse_xml.msg.startswith("Failed to parse provided XML payload")
       - err_fail_parse_json.msg.startswith("Failed to parse provided JSON/YAML payload")
 

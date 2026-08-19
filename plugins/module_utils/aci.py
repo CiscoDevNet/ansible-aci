@@ -653,7 +653,7 @@ class ACIModule(object):
             return
 
         if not standard_api:
-            # Non-MO/Class JSON responses (e.g. json_format paths without a .json/.xml extension) do not
+            # Non-MO/Class JSON responses (e.g. generic JSON APIs like /api/workflows/*) do not
             # follow the standard imdata/totalCount structure, return the raw JSON data as-is.
             self.jsondata = jsondata
             return

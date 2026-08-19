@@ -17,7 +17,7 @@ from ansible_collections.cisco.aci.tests.unit.compat.mock import MagicMock, patc
 from .utils import AnsibleExitJson, AnsibleFailJson, ModuleTestCase, set_module_args
 
 
-class TestAciRestJsonFormat(ModuleTestCase):
+class TestAciRestPathDetection(ModuleTestCase):
     """Demonstrates mocking the ACI login and HTTP layers so aci_rest.main() can be
     unit tested end-to-end without a real APIC connection."""
 
@@ -35,8 +35,9 @@ class TestAciRestJsonFormat(ModuleTestCase):
                     aci_rest.main()
         return result.exception.args[0]
 
-    def test_json_format_path_without_extension(self):
-        # json_format=True allows a path without a .json/.xml extension (e.g. APIC workflow APIs).
+    def test_non_mo_path_without_extension(self):
+        # A path without a .json/.xml extension (e.g. APIC workflow APIs) is auto-detected as
+        # a non-MO JSON API since it does not match the MO/Class path pattern.
         set_module_args(
             dict(
                 host="apic",
@@ -44,7 +45,6 @@ class TestAciRestJsonFormat(ModuleTestCase):
                 password="password",
                 path="/api/workflows/v1/cluster/status",
                 method="get",
-                json_format=True,
             )
         )
 
@@ -54,9 +54,9 @@ class TestAciRestJsonFormat(ModuleTestCase):
         # Non-MO responses do not have an "imdata" key, the raw body is returned as-is.
         self.assertEqual(result["data"], response_body)
 
-    def test_json_format_post_does_not_add_rsp_subtree(self):
+    def test_non_mo_post_does_not_add_rsp_subtree(self):
         # rsp-subtree=modified is an ACI MO-specific query parameter and must not be appended
-        # to non-MO json_format paths (e.g. APIC workflow APIs), even for POST/DELETE methods.
+        # to non-MO paths (e.g. APIC workflow APIs), even for POST/DELETE methods.
         set_module_args(
             dict(
                 host="apic",
@@ -64,7 +64,6 @@ class TestAciRestJsonFormat(ModuleTestCase):
                 password="password",
                 path="/api/workflows/v1/controller/verify",
                 method="post",
-                json_format=True,
                 output_level="debug",
                 content=dict(address="10.0.0.1", username="admin", password="bogus", addressType="cimc", controllerType="physical"),
             )
@@ -76,7 +75,7 @@ class TestAciRestJsonFormat(ModuleTestCase):
         self.assertNotIn("rsp-subtree", result["url"])
 
     def test_json_extension_post_still_adds_rsp_subtree(self):
-        # Baseline/regression check: standard MO POST requests are unaffected by the json_format change.
+        # Baseline/regression check: standard MO POST requests are unaffected by the auto-detection change.
         set_module_args(
             dict(
                 host="apic",
@@ -93,6 +92,27 @@ class TestAciRestJsonFormat(ModuleTestCase):
         result = self.execute_module(response_body)
 
         self.assertIn("rsp-subtree=modified", result["url"])
+
+    def test_json_extension_post_without_leading_slash_still_adds_rsp_subtree(self):
+        # A standard MO path missing its leading "/" (e.g. "api/mo/..." instead of "/api/mo/...")
+        # must still be recognized as a standard ACI MO/Class API path.
+        set_module_args(
+            dict(
+                host="apic",
+                username="admin",
+                password="password",
+                path="api/mo/uni/tn-ansible_test.json",
+                method="post",
+                output_level="debug",
+                content=dict(fvTenant=dict(attributes=dict(name="ansible_test"))),
+            )
+        )
+
+        response_body = {"totalCount": "1", "imdata": [{"fvTenant": {"attributes": {"name": "ansible_test"}}}]}
+        result = self.execute_module(response_body)
+
+        self.assertIn("rsp-subtree=modified", result["url"])
+        self.assertEqual(result["imdata"], response_body["imdata"])
 
     def test_json_path_with_xml_in_query_string_is_not_misdetected_as_xml(self):
         # A query string value containing ".xml" must not cause the module to mistakenly treat
@@ -112,9 +132,9 @@ class TestAciRestJsonFormat(ModuleTestCase):
 
         self.assertEqual(result["imdata"], response_body["imdata"])
 
-    def test_json_format_path_with_dot_in_query_string_is_still_detected(self):
-        # A "." in the query string (not the path itself) must not prevent a non-MO json_format
-        # path from being recognized as JSON.
+    def test_non_mo_path_with_dot_in_query_string_is_still_detected(self):
+        # A "." in the query string (not the path itself) must not prevent a non-MO path
+        # from being recognized as JSON.
         set_module_args(
             dict(
                 host="apic",
@@ -122,7 +142,6 @@ class TestAciRestJsonFormat(ModuleTestCase):
                 password="secret123",
                 path="/api/workflows/v1/cluster/status?name=test.name",
                 method="get",
-                json_format=True,
             )
         )
 
@@ -131,9 +150,9 @@ class TestAciRestJsonFormat(ModuleTestCase):
 
         self.assertEqual(result["data"], response_body)
 
-    def test_json_format_path_with_dot_in_a_non_final_path_segment(self):
+    def test_non_mo_path_with_dot_in_a_non_final_path_segment(self):
         # A "." earlier in the path (e.g. an API version segment) but not in the final segment
-        # must still be recognized as a non-MO json_format path.
+        # must still be recognized as a non-MO path.
         set_module_args(
             dict(
                 host="apic",
@@ -141,7 +160,6 @@ class TestAciRestJsonFormat(ModuleTestCase):
                 password="secret123",
                 path="/api/workflows/v1.0/cluster/status",
                 method="get",
-                json_format=True,
             )
         )
 
@@ -150,9 +168,9 @@ class TestAciRestJsonFormat(ModuleTestCase):
 
         self.assertEqual(result["data"], response_body)
 
-    def test_json_format_path_with_dot_in_final_path_segment(self):
+    def test_non_mo_path_with_dot_in_final_path_segment(self):
         # A "." in the final path segment that is not a .json/.xml extension (e.g. a domain-like
-        # segment) must still be recognized as a non-MO json_format path, not rejected.
+        # segment) must still be recognized as a non-MO path, not rejected.
         set_module_args(
             dict(
                 host="apic",
@@ -160,7 +178,6 @@ class TestAciRestJsonFormat(ModuleTestCase):
                 password="password",
                 path="/api/workflows/v1/cluster/test.name",
                 method="get",
-                json_format=True,
             )
         )
 
@@ -170,7 +187,7 @@ class TestAciRestJsonFormat(ModuleTestCase):
         self.assertEqual(result["data"], response_body)
 
     def test_json_extension_path_returns_imdata(self):
-        # Baseline/regression check: standard MO responses are unaffected by the json_format change.
+        # Baseline/regression check: standard MO responses are unaffected by the auto-detection change.
         set_module_args(
             dict(
                 host="apic",
@@ -187,14 +204,14 @@ class TestAciRestJsonFormat(ModuleTestCase):
         self.assertEqual(result["imdata"], response_body["imdata"])
         self.assertEqual(result["totalCount"], 1)
 
-    def test_path_without_extension_and_without_json_format_fails(self):
-        # Without json_format, a path missing .json/.xml is rejected with a warning and an error.
+    def test_standard_api_path_without_extension_fails(self):
+        # A standard ACI MO/Class API path missing .json/.xml is rejected with an error.
         set_module_args(
             dict(
                 host="apic",
                 username="admin",
                 password="password",
-                path="/api/workflows/v1/cluster/status",
+                path="/api/mo/uni/tn-ansible_test",
                 method="get",
             )
         )
@@ -205,11 +222,34 @@ class TestAciRestJsonFormat(ModuleTestCase):
 
         self.assertEqual(result.exception.args[0]["msg"], "Failed to find REST API payload type (neither .xml nor .json).")
 
+    def test_non_mo_prefix_path_with_json_extension_still_returns_imdata(self):
+        # A path outside the MO/Class path pattern (e.g. /connector/Systems.json) that still ends in
+        # .json is treated as returning a standard MO/Class-shaped response.
+        # See https://github.com/CiscoDevNet/ansible-aci/issues/685
+        set_module_args(
+            dict(
+                host="apic",
+                username="admin",
+                password="password",
+                path="/connector/Systems.json",
+                method="post",
+                rsp_subtree_preserve=True,
+                output_level="debug",
+                content=dict(AdminState=False),
+            )
+        )
+
+        response_body = {"totalCount": "1", "imdata": [{"AdminState": False}]}
+        result = self.execute_module(response_body)
+
+        self.assertEqual(result["imdata"], response_body["imdata"])
+        self.assertNotIn("rsp-subtree", result["url"])
+
 
 class TestAddAnnotation(unittest.TestCase):
     """add_annotation() is expected to only annotate standard ACI Managed Object (MO) payload
     nodes (identified by the presence of an "attributes" key) and to leave non-MO JSON payloads
-    (e.g. those used with json_format) untouched."""
+    (e.g. generic JSON APIs) untouched."""
 
     def test_add_annotation_to_mo_payload(self):
         payload = {"fvTenant": {"attributes": {"name": "Sales"}}}
@@ -239,7 +279,7 @@ class TestAddAnnotation(unittest.TestCase):
         self.assertNotIn("annotation", payload["fvACont"]["attributes"])
 
     def test_add_annotation_skips_non_mo_payload_without_attributes(self):
-        # Non-MO JSON payloads (e.g. json_format paths without a .json/.xml extension) do not
+        # Non-MO JSON payloads (e.g. generic JSON API paths without a .json/.xml extension) do not
         # follow the MO "attributes"/"children" structure and must not be modified or raise errors.
         payload = {"spec": {"steps": [{"name": "step1"}]}}
         aci_rest.add_annotation("orchestrator:ansible", payload)

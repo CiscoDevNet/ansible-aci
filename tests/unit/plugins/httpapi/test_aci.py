@@ -39,18 +39,18 @@ class TestValidateUrl(unittest.TestCase):
         url = "https://10.0.0.1:443/api/mo/uni.xml?rsp-subtree=modified"
         self.assertEqual(httpapi.validate_url(url), "https://10.0.0.1/api/mo/uni.xml")
 
-    def test_no_extension_json_format_with_port(self):
-        # e.g. json_format paths such as APIC workflow APIs that do not use a .json or .xml extension.
+    def test_no_extension_generic_json_api_with_port(self):
+        # e.g. generic JSON API paths such as APIC workflow APIs that do not use a .json or .xml extension.
         httpapi = AltHttpApi(port=443)
         url = "https://10.0.0.1:443/api/workflows/v1/cluster/status?rsp-subtree=modified"
         self.assertEqual(httpapi.validate_url(url), "https://10.0.0.1:443/api/workflows/v1/cluster/status")
 
-    def test_no_extension_json_format_without_port(self):
+    def test_no_extension_generic_json_api_without_port(self):
         httpapi = AltHttpApi(port=None)
         url = "https://10.0.0.1:443/api/workflows/v1/cluster/status?rsp-subtree=modified"
         self.assertEqual(httpapi.validate_url(url), "https://10.0.0.1/api/workflows/v1/cluster/status")
 
-    def test_no_extension_json_format_without_query_string(self):
+    def test_no_extension_generic_json_api_without_query_string(self):
         httpapi = AltHttpApi(port=443)
         url = "https://10.0.0.1:443/api/workflows/v1/cluster/status"
         self.assertEqual(httpapi.validate_url(url), "https://10.0.0.1:443/api/workflows/v1/cluster/status")
