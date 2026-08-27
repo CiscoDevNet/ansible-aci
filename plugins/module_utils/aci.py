@@ -467,6 +467,7 @@ class ACIModule(object):
         # aci_rest output
         self.imdata = None
         self.totalCount = None
+        self.jsondata = None
 
         # get no verify flag
         self.suppress_verification = self.params.get("suppress_verification")
@@ -651,18 +652,19 @@ class ACIModule(object):
             self.result["raw"] = rawoutput
             return
 
-        # Extract JSON API output
-        if isinstance(jsondata, list):
-            self.imdata = jsondata
-            self.totalCount = len(jsondata)
-        else:
+        if isinstance(jsondata, dict) and "imdata" in jsondata:
+            # Extract standard MO/Class (MIT) API output
             self.imdata = jsondata.get("imdata", {})
             total_count = jsondata.get("totalCount")
             if total_count is not None:
                 self.totalCount = int(total_count)
 
-        # Handle possible APIC error information
-        self.response_error()
+            # Handle possible APIC error information
+            self.response_error()
+        else:
+            # Non-MIT JSON responses (e.g. generic JSON APIs like /api/workflows/*) do not follow the
+            # standard imdata/totalCount structure, return the raw JSON data as-is.
+            self.jsondata = jsondata
 
     def response_xml(self, rawoutput):
         """Handle APIC XML response output"""

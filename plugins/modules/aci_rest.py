@@ -3,7 +3,7 @@
 
 # Copyright: (c) 2017, Dag Wieers (@dagwieers) <dag@wieers.com>
 # Copyright: (c) 2020, Cindy Zhao (@cizhao) <cizhao@cisco.com>
-# Copyright: (c) 2023, Samita Bhattacharjee (@samitab) <samitab@cisco.com>
+# Copyright: (c) 2023, Samita Bhattacharjee (@samiib) <samitab@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -37,7 +37,10 @@ options:
   path:
     description:
     - URI being used to execute API calls.
-    - Must end in C(.xml) or C(.json).
+    - ACI Managed Object (MO) and Class API paths (e.g. C(/api/mo/*) or C(/api/class/*),
+      optionally under C(/api/node/)) must end in C(.xml) or C(.json).
+    - Any other path, for example C(/api/workflows/*) or C(/connector/Systems.json), is not required
+      to use a file extension and is treated as a generic JSON API.
     type: str
     required: true
     aliases: [ uri ]
@@ -59,15 +62,21 @@ options:
   rsp_subtree_preserve:
     description:
     - Preserve the response for the provided path.
+    - This has no effect when O(path) is not an ACI MIT endpoint, as the C(rsp-subtree)
+      query parameter only applies to paths that return a MO/Class response.
     type: bool
     default: false
   page_size:
     description:
     - The number of items to return in a single page.
+    - This has no effect when O(path) is not an ACI MIT endpoint, as the C(page)/C(page-size)
+      query parameters only apply to paths that return a MO/Class response.
     type: int
   page:
     description:
     - The page number to return.
+    - This has no effect when O(path) is not an ACI MIT endpoint, as the C(page)/C(page-size)
+      query parameters only apply to paths that return a MO/Class response.
     type: int
   normalize_payload_values:
     description:
@@ -90,6 +99,12 @@ notes:
 - If you do not have any attributes, it may be necessary to add the "attributes" key with an empty dictionnary "{}" for value
   as the APIC does expect the entry to precede any children.
 - Annotation set directly in c(src) or C(content) will take precedent over the C(annotation) parameter.
+- O(path) is treated as returning a MIT MO/Class response only when it matches
+  C(/api/[node/]mo/*) or C(/api/[node/]class/*), in which case it must end in C(.xml) or C(.json).
+  Any other path, for example C(/api/workflows/*) or C(/connector/Systems.json), is treated as a
+  generic JSON API and is not required to use a file extension. Its response is returned under
+  RV(data) instead of RV(imdata)/RV(totalCount), and MO-specific behavior (such as
+  C(rsp-subtree)/pagination query parameters and error code/text extraction) does not apply.
 seealso:
 - module: cisco.aci.aci_tenant
 - name: Cisco APIC REST API Configuration Guide
@@ -98,7 +113,7 @@ seealso:
 author:
 - Dag Wieers (@dagwieers)
 - Cindy Zhao (@cizhao)
-- Samita Bhattacharjee (@samitab)
+- Samita Bhattacharjee (@samiib)
 """
 
 EXAMPLES = r"""
@@ -227,24 +242,38 @@ EXAMPLES = r"""
   delay: 30
   delegate_to: localhost
   run_once: true
+
+- name: Check the workflows cluster status (non-MIT endpoint)
+  cisco.aci.aci_rest:
+    host: apic
+    username: admin
+    password: SomeSecretPassword
+    method: get
+    path: /api/workflows/v1/cluster/status
+  register: cluster_status
 """
 
 RETURN = r"""
 error_code:
   description: The REST ACI return code, useful for troubleshooting on failure
-  returned: always
+  returned: failure, when O(path) is an ACI MIT endpoint
   type: int
   sample: 122
 error_text:
   description: The REST ACI descriptive text, useful for troubleshooting on failure
-  returned: always
+  returned: failure, when O(path) is an ACI MIT endpoint
   type: str
   sample: unknown managed object class foo
 imdata:
   description: Converted output returned by the APIC REST (register this for post-processing)
-  returned: always
+  returned: when O(path) is an ACI MIT endpoint
   type: str
   sample: [{"error": {"attributes": {"code": "122", "text": "unknown managed object class foo"}}}]
+data:
+  description: JSON output returned by APIC APIs that do not follow the MIT MO/Class response structure
+  returned: when O(path) is not an ACI MIT endpoint
+  type: raw
+  sample: {"status": {"state": "Completed"}}
 payload:
   description: The (templated) payload send to the APIC REST API (xml or json)
   returned: always
@@ -267,7 +296,7 @@ status:
   sample: 400
 totalCount:
   description: Number of items in the imdata array
-  returned: always
+  returned: when O(path) is an ACI MIT endpoint
   type: str
   sample: '0'
 url:
@@ -323,6 +352,13 @@ from ansible.module_utils._text import to_text
 from ansible_collections.cisco.aci.plugins.module_utils.annotation_unsupported import (
     ANNOTATION_UNSUPPORTED,
 )
+
+# Matches ACI Managed Object (MO) and Class API (MIT) paths, for example:
+#   /api/mo/uni/tn-test.json
+#   /api/node/class/topSystem.json
+# These paths require a .xml or .json extension (checked separately). Any other path
+# (e.g. /api/workflows/v1/cluster/status) is treated as a generic JSON API.
+MIT_API_PATH_RE = re.compile(r"^/?api/(?:node/)?(?:mo|class)(?:/|$)")
 
 
 def update_qsl(url, params):
@@ -393,8 +429,8 @@ class ACIRESTModule(ACIModule):
         else:
             self.response_xml(rawoutput)
 
-        # Use APICs built-in idempotency
-        if HAS_URLPARSE:
+        # Use APICs built-in idempotency, only applies to MO/Class (MIT) responses
+        if HAS_URLPARSE and self.imdata is not None:
             self.result["changed"] = self.changed(self.imdata)
 
 
@@ -442,16 +478,30 @@ def main():
             module.fail_json(msg="Cannot find/access src '{0}'".format(src))
 
     # Find request type
-    if path.find(".xml") != -1:
-        rest_type = "xml"
-        if not HAS_LXML_ETREE:
-            module.fail_json(msg="The lxml python library is missing, or lacks etree support.")
-        if not HAS_XMLJSON_COBRA:
-            module.fail_json(msg="The xmljson python library is missing, or lacks cobra support.")
-    elif path.find(".json") != -1:
-        rest_type = "json"
+    # A path is treated as an ACI MIT (Managed Information Tree) MO/Class API endpoint when it
+    # matches /api/[node/]mo/* or /api/[node/]class/*, and requires a .xml or .json extension to
+    # determine the payload/response format. Any other path (e.g. /api/workflows/*) is treated as a
+    # generic JSON API: it is not required to use a file extension, its response is returned as-is
+    # under "data" instead of "imdata"/"totalCount", and MO-specific behavior such as rsp-subtree,
+    # pagination, and error code/text extraction does not apply.
+    # Only inspect the path component (without any query string) so query values containing
+    # ".xml"/".json" (e.g. filter values) cannot be mistaken for the path's actual extension.
+    path_no_query = urlparse(path).path if HAS_URLPARSE else path.split("?", 1)[0]
+    is_mit_endpoint = MIT_API_PATH_RE.match(path_no_query) is not None
+    if is_mit_endpoint:
+        if path_no_query.endswith(".xml"):
+            rest_type = "xml"
+            if not HAS_LXML_ETREE:
+                module.fail_json(msg="The lxml python library is missing, or lacks etree support.")
+            if not HAS_XMLJSON_COBRA:
+                module.fail_json(msg="The xmljson python library is missing, or lacks cobra support.")
+        elif path_no_query.endswith(".json"):
+            rest_type = "json"
+        else:
+            # An MO/Class path without a .xml or .json extension is invalid.
+            module.fail_json(msg="Failed to find REST API payload type (neither .xml nor .json).")
     else:
-        module.fail_json(msg="Failed to find REST API payload type (neither .xml nor .json).")
+        rest_type = "json"
 
     aci = ACIRESTModule(module)
     aci.result["status"] = -1  # Ensure we always return a status
@@ -470,7 +520,8 @@ def main():
                 payload = yaml.safe_load(payload)
             except Exception as e:
                 module.fail_json(msg="Failed to parse provided JSON/YAML payload: {0}".format(to_text(e)), exception=to_text(e), payload=payload)
-        add_annotation(annotation, payload)
+        if is_mit_endpoint:
+            add_annotation(annotation, payload)
         payload = json.dumps(convert_numbers_and_none_values_to_string(payload) if normalize_payload_values else payload)
 
     elif rest_type == "xml" and HAS_LXML_ETREE:
@@ -492,10 +543,10 @@ def main():
     aci.path = path.lstrip("/")
     aci.url = "{0}/{1}".format(aci.base_url, aci.path)
 
-    if aci.params.get("method") == "get" and page_size:
+    if aci.params.get("method") == "get" and page_size and is_mit_endpoint:
         aci.path = update_qsl(aci.path, {"page": page, "page-size": page_size})
         aci.url = update_qsl(aci.url, {"page": page, "page-size": page_size})
-    if aci.params.get("method") != "get" and not rsp_subtree_preserve:
+    if aci.params.get("method") != "get" and not rsp_subtree_preserve and is_mit_endpoint:
         aci.path = "{0}?rsp-subtree=modified".format(aci.path)
         aci.url = update_qsl(aci.url, {"rsp-subtree": "modified"})
 
@@ -506,8 +557,11 @@ def main():
         # Report failure
         if info.get("status") != 200:
             try:
-                # APIC error
                 aci.response_type(info["body"], rest_type)
+                if not is_mit_endpoint:
+                    aci.result["data"] = aci.jsondata
+                    aci.fail_json(msg="HTTP Error: {0}".format(aci.status))
+                # APIC error
                 aci.fail_json(msg="APIC Error {code}: {text}".format_map(aci.error))
             except KeyError:
                 # Connection error
@@ -519,8 +573,12 @@ def main():
             aci.response_type(info.get("body"), rest_type)
 
         aci.result["status"] = aci.status
-        aci.result["imdata"] = aci.imdata
-        aci.result["totalCount"] = aci.totalCount
+
+        if aci.imdata is not None:
+            aci.result["imdata"] = aci.imdata
+            aci.result["totalCount"] = aci.totalCount
+        else:
+            aci.result["data"] = aci.jsondata
 
     else:
         # NOTE A case when aci_rest is used with check mode and the apic host is used directly from the inventory
