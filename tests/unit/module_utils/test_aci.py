@@ -343,14 +343,14 @@ authentication"
         self.assertEqual(aci.result["raw"], raw)
 
     def test_non_mo_json_response(self):
-        # Non-MO JSON responses (e.g. generic JSON API paths without a .json/.xml extension, such as APIC
-        # workflow APIs) do not follow the standard imdata/totalCount structure.
+        # Non-MO JSON responses (e.g. a dict without an "imdata" key, such as APIC workflow APIs) do
+        # not follow the standard imdata/totalCount structure and are auto-detected from the body.
         self.maxDiff = None
         aci.totalCount = None
 
         jsondata = {"clusterHealth": {"status": "fully-fit"}}
 
         json_response = '{"clusterHealth":{"status":"fully-fit"}}'
-        aci.response_json(json_response, standard_api=False)
+        aci.response_json(json_response)
         self.assertEqual(aci.jsondata, jsondata)
         self.assertIsNone(aci.totalCount)

@@ -364,7 +364,6 @@
     <<: *aci_info
     path: /connector/Systems.json
     method: post
-    rsp_subtree_preserve: true
     content:
       {
         "AdminState": false
@@ -374,7 +373,7 @@
 - name: Verify Intersight Connectivity is disabled
   assert:
     that:
-    - disable_intersight_connectivity.imdata.0.AdminState == false
+    - disable_intersight_connectivity.data.0.AdminState == false
 
 # Test to check the ansible-core >= 2.19
 - name: Ensure Port Channel interface policy does not exists

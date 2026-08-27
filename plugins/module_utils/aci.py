@@ -642,7 +642,7 @@ class ACIModule(object):
             + "APIC-Request-Signature={0}".format(to_native(base64.b64encode(sig_signature)))
         )
 
-    def response_json(self, rawoutput, standard_api=True):
+    def response_json(self, rawoutput):
         """Handle APIC JSON response output"""
         try:
             jsondata = json.loads(rawoutput)
@@ -652,24 +652,19 @@ class ACIModule(object):
             self.result["raw"] = rawoutput
             return
 
-        if not standard_api:
-            # Non-MO/Class JSON responses (e.g. generic JSON APIs like /api/workflows/*) do not
-            # follow the standard imdata/totalCount structure, return the raw JSON data as-is.
-            self.jsondata = jsondata
-            return
-
-        # Extract JSON API output
-        if isinstance(jsondata, list):
-            self.imdata = jsondata
-            self.totalCount = len(jsondata)
-        else:
+        if isinstance(jsondata, dict) and "imdata" in jsondata:
+            # Extract standard MO/Class (MIT) API output
             self.imdata = jsondata.get("imdata", {})
             total_count = jsondata.get("totalCount")
             if total_count is not None:
                 self.totalCount = int(total_count)
 
-        # Handle possible APIC error information
-        self.response_error()
+            # Handle possible APIC error information
+            self.response_error()
+        else:
+            # Non-MIT JSON responses (e.g. generic JSON APIs like /api/workflows/*) do not follow the
+            # standard imdata/totalCount structure, return the raw JSON data as-is.
+            self.jsondata = jsondata
 
     def response_xml(self, rawoutput):
         """Handle APIC XML response output"""

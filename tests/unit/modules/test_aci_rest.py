@@ -222,10 +222,10 @@ class TestAciRestPathDetection(ModuleTestCase):
 
         self.assertEqual(result.exception.args[0]["msg"], "Failed to find REST API payload type (neither .xml nor .json).")
 
-    def test_non_mo_prefix_path_with_json_extension_still_returns_imdata(self):
-        # A path outside the MO/Class path pattern (e.g. /connector/Systems.json) that still ends in
-        # .json is treated as returning a standard MO/Class-shaped response.
-        # See https://github.com/CiscoDevNet/ansible-aci/issues/685
+    def test_non_mo_prefix_path_with_json_extension_returns_data(self):
+        # A path outside the MO/Class path pattern (e.g. /connector/Systems.json) is treated as a
+        # generic JSON API, even though it ends in .json. Its response is returned under "data"
+        # instead of "imdata"/"totalCount". See https://github.com/CiscoDevNet/ansible-aci/issues/685
         set_module_args(
             dict(
                 host="apic",
@@ -233,16 +233,15 @@ class TestAciRestPathDetection(ModuleTestCase):
                 password="password",
                 path="/connector/Systems.json",
                 method="post",
-                rsp_subtree_preserve=True,
                 output_level="debug",
                 content=dict(AdminState=False),
             )
         )
 
-        response_body = {"totalCount": "1", "imdata": [{"AdminState": False}]}
+        response_body = [{"AdminState": False}]
         result = self.execute_module(response_body)
 
-        self.assertEqual(result["imdata"], response_body["imdata"])
+        self.assertEqual(result["data"], response_body)
         self.assertNotIn("rsp-subtree", result["url"])
 
 
