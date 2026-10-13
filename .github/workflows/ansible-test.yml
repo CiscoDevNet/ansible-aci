@@ -1,22 +1,31 @@
 name: CI
 on:
-  # Triggers the workflow on push or pull request events but only for the develop branch
+  # Triggers the workflow on push or pull request events for the develop and main branches
   push:
     branches:
       - develop
       - main
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "changelogs/**"
+      - "playbooks/**"
   pull_request:
     branches:
       - develop
       - main
-  # schedule:
-  #   # * is a special character in YAML so you have to quote this string
-  #   - cron: '0 8 * * *'
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "changelogs/**"
+      - "playbooks/**"
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# env:
-#   python_version: '3.11'
+# Cancel superseded runs on the same PR / ref to save Actions minutes
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pep8-black:
@@ -35,86 +44,61 @@ jobs:
   build:
     name: Build Collection
     runs-on: ubuntu-latest
-    strategy: &ansible_strategy
+    needs:
+      - pep8-black
+    strategy:
       fail-fast: false
-      # https://docs.ansible.com/projects/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
-      # https://access.redhat.com/support/policy/updates/ansible-automation-platform#coreversion
+      # Build on every supported ansible-core version to catch version-specific
+      # build/galaxy.yml breakage. The resulting tarball is identical, so only the
+      # canonical cell uploads the artifact that downstream jobs consume.
       matrix:
-        include:
-          # Ansible 2.19: supports Python 3.11 - 3.13
-          - ansible_version: "stable-2.19"
-            python_version: "3.13"
-          - ansible_version: "stable-2.19"
-            python_version: "3.12"
-          - ansible_version: "stable-2.19"
-            python_version: "3.11"
-
-          # Ansible 2.18: supports Python 3.11 - 3.13
-          - ansible_version: "stable-2.18"
-            python_version: "3.13"
-          - ansible_version: "stable-2.18"
-            python_version: "3.12"
-          - ansible_version: "stable-2.18"
-            python_version: "3.11"
-
-          # Ansible 2.17: supports Python 3.10 - 3.12
-          - ansible_version: "stable-2.17"
-            python_version: "3.12"
-          - ansible_version: "stable-2.17"
-            python_version: "3.11"
-          - ansible_version: "stable-2.17"
-            python_version: "3.10"
-
-          # Ansible 2.16: supports Python 3.10 - 3.12
-          - ansible_version: "stable-2.16"
-            python_version: "3.12"
-          - ansible_version: "stable-2.16"
-            python_version: "3.11"
-          - ansible_version: "stable-2.16"
-            python_version: "3.10"
+        ansible_version:
+          - "stable-2.19"
+          - "stable-2.18"
+          - "stable-2.17"
+          - "stable-2.16"
 
     steps:
       - name: Check out code
         uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.python_version }}
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python_version }}
+          python-version: "3.12"
 
-      - name: Install ansible-base (${{ matrix.ansible_version }})
+      - name: Install ansible-core (${{ matrix.ansible_version }})
         run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible_version }}.tar.gz --disable-pip-version-check
 
       - name: Build a collection tarball
         run: ansible-galaxy collection build --output-path "${GITHUB_WORKSPACE}/.cache/collection-tarballs"
 
-      - name: Store migrated collection artifacts
+      - name: Store collection artifact
+        if: matrix.ansible_version == 'stable-2.19'
         uses: actions/upload-artifact@v7
         with:
-          name: collection-${{ matrix.python_version }}-${{ matrix.ansible_version }}
+          name: collection
           path: .cache/collection-tarballs
 
   ansible-galaxy-importer:
     name: Ansible Galaxy-Importer Check
     needs:
-      - pep8-black
       - build
     runs-on: ubuntu-latest
-    strategy: *ansible_strategy
-
+    # The importer check is version-independent, so it runs once.
     steps:
-      - name: Set up Python ${{ matrix.python_version }}
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python_version }}
+          python-version: "3.13"
 
-      - name: Install ansible-core (${{ matrix.ansible_version }})
-        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible_version }}.tar.gz --disable-pip-version-check
+      - name: Install ansible-core (stable-2.19)
+        run: pip install https://github.com/ansible/ansible/archive/stable-2.19.tar.gz --disable-pip-version-check
 
-      - name: Download migrated collection artifacts
+      - name: Download collection artifact
         uses: actions/download-artifact@v8
         with:
-          name: collection-${{ matrix.python_version }}-${{ matrix.ansible_version }}
+          name: collection
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
@@ -154,7 +138,7 @@ jobs:
       - name: Store galaxy_importer check log file
         uses: actions/upload-artifact@v7
         with:
-          name: galaxy-importer-log-${{ matrix.python_version }}-${{ matrix.ansible_version }}
+          name: galaxy-importer-log
           path: .cache/collection-tarballs/importer_result.json
 
   ansible-test:
@@ -162,7 +146,20 @@ jobs:
     needs:
       - ansible-galaxy-importer
     runs-on: ubuntu-latest
-    strategy: *ansible_strategy
+    strategy:
+      fail-fast: false
+      # ansible-test sanity runs inside the default --docker container, which
+      # ignores the runner host Python, so one cell per ansible-core version is enough.
+      matrix:
+        include:
+          - ansible_version: "stable-2.19"
+            python_version: "3.13"
+          - ansible_version: "stable-2.18"
+            python_version: "3.13"
+          - ansible_version: "stable-2.17"
+            python_version: "3.12"
+          - ansible_version: "stable-2.16"
+            python_version: "3.12"
 
     steps:
       - name: Set up Python ${{ matrix.python_version }}
@@ -173,36 +170,63 @@ jobs:
       - name: Install ansible-base (${{ matrix.ansible_version }})
         run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible_version }}.tar.gz --disable-pip-version-check
 
-      - name: Install coverage (v4.5.4)
-        run: pip install coverage==4.5.4
-
-      - name: Download migrated collection artifacts
+      - name: Download collection artifact
         uses: actions/download-artifact@v8
         with:
-          name: collection-${{ matrix.python_version }}-${{ matrix.ansible_version }}
+          name: collection
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
         run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
+      # Sanity tests do not generate coverage, so none is collected or uploaded.
       - name: Run sanity tests
-        run: ansible-test sanity --docker -v --color --truncate 0 --coverage
-        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
-
-      - name: Generate coverage report
-        run: ansible-test coverage xml -v --requirements --group-by command --group-by version
-        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
-
-      - name: Push coverate report to codecov.io
-        run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F sanity
+        run: ansible-test sanity --docker -v --color --truncate 0
         working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
   units:
-    name: Unit Tests
+    # Explicit name so the coverage matrix key does not appear in the job name.
+    name: Unit Tests (${{ matrix.ansible_version }}, ${{ matrix.python_version }})
     needs:
       - ansible-galaxy-importer
     runs-on: ubuntu-latest
-    strategy: *ansible_strategy
+    strategy:
+      fail-fast: false
+      # https://docs.ansible.com/projects/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
+      # Unit tests exercise each interpreter via --python, so the full matrix is retained.
+      matrix:
+        include:
+          - ansible_version: "stable-2.19"
+            python_version: "3.13"
+            # Coverage is a property of the code, not the interpreter, so only this cell
+            # generates and uploads it. Keep this on exactly one entry.
+            coverage: true
+          - ansible_version: "stable-2.19"
+            python_version: "3.12"
+          - ansible_version: "stable-2.19"
+            python_version: "3.11"
+          - ansible_version: "stable-2.18"
+            python_version: "3.13"
+          - ansible_version: "stable-2.18"
+            python_version: "3.12"
+          - ansible_version: "stable-2.18"
+            python_version: "3.11"
+          - ansible_version: "stable-2.17"
+            python_version: "3.12"
+          - ansible_version: "stable-2.17"
+            python_version: "3.11"
+          - ansible_version: "stable-2.17"
+            python_version: "3.10"
+          - ansible_version: "stable-2.16"
+            python_version: "3.12"
+          - ansible_version: "stable-2.16"
+            python_version: "3.11"
+          - ansible_version: "stable-2.16"
+            python_version: "3.10"
+    permissions:
+      contents: read
+      actions: read
+      id-token: write  # Codecov OIDC upload; no CODECOV_TOKEN secret needed
 
     steps:
       - name: Set up Python ${{ matrix.python_version }}
@@ -213,89 +237,38 @@ jobs:
       - name: Install ansible-base (${{ matrix.ansible_version }})
         run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible_version }}.tar.gz --disable-pip-version-check
 
-      - name: Install coverage (v4.5.4)
-        run: pip install coverage==4.5.4
-
-      - name: Download migrated collection artifacts
+      - name: Download collection artifact
         uses: actions/download-artifact@v8
         with:
-          name: collection-${{ matrix.python_version }}-${{ matrix.ansible_version }}
+          name: collection
           path: .cache/collection-tarballs
 
       - name: Install the collection tarball
         run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
 
+      # ansible-test runs every test in its own fork, so --coverage writes one data file per test and the
+      # combine in "Generate coverage report" scales with the test count. Only the matrix.coverage cell pays that.
       - name: Run unit tests
-        run: ansible-test units --docker -v --color --truncate 0 --python ${{ matrix.python_version }} --coverage
+        run: >-
+          ansible-test units --docker -v --color --truncate 0
+          --python ${{ matrix.python_version }}
+          ${{ matrix.coverage && '--coverage' || '' }}
         working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
 
       - name: Generate coverage report
-        run: ansible-test coverage xml -v --requirements --group-by command --group-by version
+        if: matrix.coverage
+        run: ansible-test coverage xml -v --requirements
         working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+
+      - name: Check out code (gives the Codecov uploader the commit and file list)
+        if: matrix.coverage
+        uses: actions/checkout@v6
 
       - name: Push coverage report to codecov.io
-        run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F unit
-        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
-
-  integration:
-    name: Integration Tests
-    if: false # No integration tests for now
-    needs:
-      - units
-      - ansible-test
-    runs-on: ubuntu-latest
-    strategy: *ansible_strategy
-
-    env:
-      MUTEX_URL: https://8v7s765ibh.execute-api.us-west-1.amazonaws.com
-    steps:
-      - name: Set up Python ${{ matrix.python_version }}
-        uses: actions/setup-python@v6
+        if: matrix.coverage
+        uses: codecov/codecov-action@v7
         with:
-          python-version: ${{ matrix.python_version }}
-
-      - name: Install ansible-base (${{ matrix.ansible_version }})
-        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible_version }}.tar.gz --disable-pip-version-check
-
-      - name: Install coverage (v4.5.4)
-        run: pip install coverage==4.5.4
-
-      - name: Download migrated collection artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: collection-${{ matrix.python_version }}-${{ matrix.ansible_version }}
-          path: .cache/collection-tarballs
-
-      - name: Install the collection tarball
-        run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
-
-      - name: Requesting integration mutex
-        uses: nev7n/wait_for_response@v1
-        with:
-          url: ${{ format('{0}/v1/ansible-aci?repo={1}&run_id={2}', env.MUTEX_URL, github.repository, github.run_id) }}
-          responseCode: 200
-          timeout: 2000000
-          interval: 5000
-
-      - name: Run integration tests on Python ${{ matrix.python_version }}
-        run: |
-          ansible-test network-integration --docker -v --color --retry-on-error --python ${{ matrix.python_version }} \
-            --truncate 0 --continue-on-error --coverage
-        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
-
-      - name: Releasing integration mutex
-        uses: nev7n/wait_for_response@v1
-        if: always()
-        with:
-          url: ${{ format('{0}/v1/ansible-aci/release?repo={1}&run_id={2}', env.MUTEX_URL, github.repository, github.run_id) }}
-          responseCode: 200
-
-      - name: Generate coverage report
-        if: always()
-        run: ansible-test coverage xml -v --requirements --group-by command --group-by version
-        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
-
-      - name: Push coverage report to codecov.io
-        if: always()
-        run: bash <(curl -s https://codecov.io/bash) -s 'tests/output/reports/' -F integration
-        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci
+          directory: /home/runner/.ansible/collections/ansible_collections/cisco/aci/tests/output/reports/
+          flags: unit
+          use_oidc: true
+          fail_ci_if_error: true

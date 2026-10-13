@@ -10,19 +10,14 @@ permissions:
   contents: read
 
 on:
-  # Disabled on pull requests for now.
-  # There are thousands of yaml linting issues in our tests.
-  # It may not be reasonable to go through and fix each formatting issue.
-  # pull_request:
-  #   branches:
-  #     - main
-  #     - develop
+  push:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
-  schedule:
-    - cron: '0 6 * * *'
 
 concurrency:
-  group: cert-ver-${{ github.head_ref || github.run_id }}
+  group: cert-${{ github.ref }}
   cancel-in-progress: true
 
 # Files that are not related to the core functionality

@@ -1,27 +1,41 @@
 name: Generate Changelog
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      compare_ref:
+        description: Branch or ref to compare against the latest release and generate the changelog from
+        required: false
+        default: develop
+        type: string
+      target_version:
+        description: Optional manual override for the release version (e.g. 2.0.0). If omitted, the version is calculated automatically from the commit types.
+        required: false
+        type: string
 jobs:
   generate-changelog:
     name: Run automation script
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Check out script code
         uses: actions/checkout@v6
         with:
           repository: ciscoecosystem/release_script
           path: ./release_script
+          ref: edd5e186aff0e854dbe128209624c11e5db15bb2
 
       - name: Check out collection code
         uses: actions/checkout@v6
         with:
           path: ./collection
+          ref: ${{ inputs.compare_ref }}
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v6
         with:
-          python-version: 3.10
+          python-version: "3.10"
 
       - name: Install release script requirements
         run: pip install -r ./release_script/requirements.txt
@@ -30,3 +44,5 @@ jobs:
         run: python ./release_script/script.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMPARE_REF: ${{ inputs.compare_ref }}
+          TARGET_VERSION: ${{ inputs.target_version }}

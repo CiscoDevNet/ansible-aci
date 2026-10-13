@@ -84,7 +84,7 @@ ansible-galaxy collection install cisco-aci-* --force
 
 Go to [ansible-aci Actions](https://github.com/CiscoDevNet/ansible-aci/actions/workflows/ansible-test.yml?query=branch%3Amain) and select the latest CI build.
 
-Under Artifacts download collection suffixed with the latest version of Ansible (eg. `collection-stable-2.17`) and unzip it using Terminal or Console.
+Under Artifacts download the `collection` artifact and unzip it using Terminal or Console.
 
 *Note: The collection file is a zip file containing a tar.gz file. We recommend using CLI because some GUI-based unarchiver might unarchive both nested archives in one go.*
 
