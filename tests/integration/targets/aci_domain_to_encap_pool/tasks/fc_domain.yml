@@ -1,0 +1,367 @@
+# Test code for the ACI modules
+# Copyright: (c) 2026, Cisco Systems, Inc.
+# Copyright: (c) 2026, Akini Ross (@akinross)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# FC domain binding lifecycle test.
+
+- name: Set FC domain test variables
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
+    aci_test:
+      domains:
+        - fc_domain_encap_test_1
+        - fc_domain_encap_test_2
+        - fc_domain_encap_test_3
+      pools:
+        - name: fc_domain_encap_pool
+          pool_type: vsan
+          mode: static
+          target_dn: uni/infra/vsanns-[fc_domain_encap_pool]-static
+          domain_dn: uni/fc-fc_domain_encap_test_1/rsvsanNs
+        - name: fc_domain_encap_pool_updated
+          pool_type: vsan
+          mode: static
+          target_dn: uni/infra/vsanns-[fc_domain_encap_pool_updated]-static
+          domain_dn: uni/fc-fc_domain_encap_test_1/rsvsanNs
+
+      query_domains: []
+
+- name: Test FC domain to VSAN pool binding lifecycle
+  block:
+    # TEST SETUP
+    - name: Remove FC domain test bindings before setup
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.0 }}"
+        domain_type: fc
+        pool: "{{ item.1.name }}"
+        pool_type: "{{ item.1.pool_type }}"
+        pool_allocation_mode: "{{ item.1.mode }}"
+        state: absent
+      loop: "{{ aci_test.domains | product(aci_test.pools) | list }}"
+
+    - name: Remove cross-domain query fixture bindings before setup
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: absent
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Remove cross-domain query fixture domains before setup
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        state: absent
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Remove FC domain test domains before setup
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item }}"
+        domain_type: fc
+        state: absent
+      loop: "{{ aci_test.domains }}"
+
+    - name: Remove FC domain test VSAN pools before setup
+      cisco.aci.aci_encap_pool:
+        <<: *aci_info
+        pool: "{{ item.name }}"
+        pool_type: vsan
+        pool_allocation_mode: "{{ item.mode }}"
+        state: absent
+      loop: "{{ aci_test.pools }}"
+
+    - name: Create FC domain test VSAN pools
+      cisco.aci.aci_encap_pool:
+        <<: *aci_info
+        pool: "{{ item.name }}"
+        pool_type: vsan
+        pool_allocation_mode: "{{ item.mode }}"
+        state: present
+      loop: "{{ aci_test.pools }}"
+
+    - name: Create FC domain test domains
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item }}"
+        domain_type: fc
+        state: present
+      loop: "{{ aci_test.domains }}"
+
+    - name: Create FC lifecycle bindings for query-all coverage
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item }}"
+        domain_type: fc
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: present
+      loop: "{{ aci_test.domains[1:] }}"
+
+    - name: Create cross-domain query fixture domains
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        state: present
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Create cross-domain query fixture bindings
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: present
+      loop: "{{ aci_test.query_domains }}"
+
+    # CREATE
+    - name: Create FC domain binding in check mode
+      cisco.aci.aci_domain_to_encap_pool: &fc_domain_binding_initial
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: fc
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: present
+      check_mode: true
+      register: cm_create_fc_domain_binding
+
+    - name: Create FC domain binding
+      cisco.aci.aci_domain_to_encap_pool: *fc_domain_binding_initial
+      register: nm_create_fc_domain_binding
+
+    - name: Create FC domain binding again
+      cisco.aci.aci_domain_to_encap_pool: *fc_domain_binding_initial
+      register: nm_create_fc_domain_binding_again
+
+    - name: Assert FC domain binding CREATE results
+      ansible.builtin.assert:
+        that:
+          - cm_create_fc_domain_binding is changed
+          - cm_create_fc_domain_binding.previous == []
+          - cm_create_fc_domain_binding.current == []
+          - cm_create_fc_domain_binding.proposed.fcRsVsanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - nm_create_fc_domain_binding is changed
+          - nm_create_fc_domain_binding.previous == []
+          - nm_create_fc_domain_binding.current.0.fcRsVsanNs.attributes.dn == aci_test.pools[0].domain_dn
+          - nm_create_fc_domain_binding.current.0.fcRsVsanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - nm_create_fc_domain_binding_again is not changed
+          - nm_create_fc_domain_binding_again.previous == nm_create_fc_domain_binding_again.current
+
+    # UPDATE
+    - name: Update FC domain binding in check mode
+      cisco.aci.aci_domain_to_encap_pool: &fc_domain_binding_updated
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: fc
+        pool: "{{ aci_test.pools[1].name }}"
+        pool_type: "{{ aci_test.pools[1].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[1].mode }}"
+        state: present
+      check_mode: true
+      register: cm_update_fc_domain_binding
+
+    - name: Update FC domain binding
+      cisco.aci.aci_domain_to_encap_pool: *fc_domain_binding_updated
+      register: nm_update_fc_domain_binding
+
+    - name: Update FC domain binding again
+      cisco.aci.aci_domain_to_encap_pool: *fc_domain_binding_updated
+      register: nm_update_fc_domain_binding_again
+
+    - name: Assert FC domain binding UPDATE results
+      ansible.builtin.assert:
+        that:
+          - cm_update_fc_domain_binding is changed
+          - cm_update_fc_domain_binding.previous.0.fcRsVsanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - cm_update_fc_domain_binding.current.0.fcRsVsanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - cm_update_fc_domain_binding.proposed.fcRsVsanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - nm_update_fc_domain_binding is changed
+          - nm_update_fc_domain_binding.previous.0.fcRsVsanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - nm_update_fc_domain_binding.current.0.fcRsVsanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - nm_update_fc_domain_binding_again is not changed
+          - nm_update_fc_domain_binding_again.previous == nm_update_fc_domain_binding_again.current
+
+    # QUERY
+    - name: Query specific FC domain binding
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: fc
+        pool: "{{ aci_test.pools[1].name }}"
+        pool_type: "{{ aci_test.pools[1].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[1].mode }}"
+        state: query
+      register: query_fc_domain_binding
+
+    - name: Query all VSAN pool bindings
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        pool_type: vsan
+        state: query
+      register: query_all_fc_pool_type_bindings
+
+    - name: Query bindings by VSAN pool without a domain-type filter
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: vsan
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: query
+      register: query_all_fc_pool_bindings
+
+    - name: Query bindings filtered by FC domain type and pool
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain_type: fc
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: vsan
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: query
+      register: query_all_fc_domain_pool_bindings
+
+    - name: Query all bindings filtered to FC domains
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain_type: fc
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        state: query
+      register: query_all_fc_domain_bindings
+
+    - name: Assert FC domain query results
+      ansible.builtin.assert:
+        that:
+          - query_fc_domain_binding is not changed
+          - query_fc_domain_binding.current | length == 1
+          - query_fc_domain_binding.current.0.fcRsVsanNs.attributes.dn == aci_test.pools[1].domain_dn
+          - query_fc_domain_binding.current.0.fcRsVsanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - query_all_fc_domain_bindings is not changed
+          - query_all_fc_domain_bindings.current | length >= 3
+          - "query_all_fc_domain_bindings.current | selectattr('fcRsVsanNs.attributes.dn', 'equalto', 'uni/fc-' ~ aci_test.domains[0] ~ '/rsvsanNs') | list | length == 1"
+          - "query_all_fc_domain_bindings.current | selectattr('fcRsVsanNs.attributes.dn', 'equalto', 'uni/fc-' ~ aci_test.domains[1] ~ '/rsvsanNs') | list | length == 1"
+          - "query_all_fc_domain_bindings.current | selectattr('fcRsVsanNs.attributes.dn', 'equalto', 'uni/fc-' ~ aci_test.domains[2] ~ '/rsvsanNs') | list | length == 1"
+          - query_all_fc_pool_type_bindings is not changed
+          - query_all_fc_pool_bindings is not changed
+          - query_all_fc_domain_pool_bindings is not changed
+          - "query_all_fc_pool_type_bindings.current | selectattr('fcRsVsanNs.attributes.dn', 'equalto', 'uni/fc-' ~ aci_test.domains[1] ~ '/rsvsanNs') | list | length == 1"
+          - "query_all_fc_pool_type_bindings.current | selectattr('fcRsVsanNs.attributes.dn', 'equalto', 'uni/fc-' ~ aci_test.domains[2] ~ '/rsvsanNs') | list | length == 1"
+          - "query_all_fc_pool_bindings.current | selectattr('fcRsVsanNs.attributes.dn', 'equalto', 'uni/fc-' ~ aci_test.domains[1] ~ '/rsvsanNs') | list | length == 1"
+          - "query_all_fc_pool_bindings.current | selectattr('fcRsVsanNs.attributes.dn', 'equalto', 'uni/fc-' ~ aci_test.domains[2] ~ '/rsvsanNs') | list | length == 1"
+          - query_all_fc_domain_pool_bindings.current | length == 2
+
+    # DELETE
+    - name: Delete FC domain binding in check mode
+      cisco.aci.aci_domain_to_encap_pool: &fc_domain_binding_absent
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: fc
+        pool: "{{ aci_test.pools[1].name }}"
+        pool_type: "{{ aci_test.pools[1].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[1].mode }}"
+        state: absent
+      check_mode: true
+      register: cm_delete_fc_domain_binding
+
+    - name: Delete FC domain binding
+      cisco.aci.aci_domain_to_encap_pool: *fc_domain_binding_absent
+      register: nm_delete_fc_domain_binding
+
+    - name: Delete FC domain binding again
+      cisco.aci.aci_domain_to_encap_pool: *fc_domain_binding_absent
+      register: nm_delete_fc_domain_binding_again
+
+    - name: Query FC domain after deleting binding
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: fc
+        state: query
+      register: query_fc_domain_after_binding_delete
+
+    - name: Assert FC domain DELETE results
+      ansible.builtin.assert:
+        that:
+          - cm_delete_fc_domain_binding is changed
+          - cm_delete_fc_domain_binding.previous.0.fcRsVsanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - cm_delete_fc_domain_binding.current.0.fcRsVsanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - nm_delete_fc_domain_binding is changed
+          - nm_delete_fc_domain_binding.previous.0.fcRsVsanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - nm_delete_fc_domain_binding.current == []
+          - nm_delete_fc_domain_binding_again is not changed
+          - nm_delete_fc_domain_binding_again.previous == nm_delete_fc_domain_binding_again.current
+          - query_fc_domain_after_binding_delete is not changed
+          - query_fc_domain_after_binding_delete.current | length == 1
+          - query_fc_domain_after_binding_delete.current.0.fcDomP.attributes.name == aci_test.domains[0]
+
+  always:
+    # CLEANUP
+    - name: Remove remaining cross-domain query fixture bindings
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: absent
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Remove cross-domain query fixture domains
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        state: absent
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Remove remaining FC domain test bindings
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.0 }}"
+        domain_type: fc
+        pool: "{{ item.1.name }}"
+        pool_type: "{{ item.1.pool_type }}"
+        pool_allocation_mode: "{{ item.1.mode }}"
+        state: absent
+      loop: "{{ aci_test.domains | product(aci_test.pools) | list }}"
+
+    - name: Remove FC domain test domains
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item }}"
+        domain_type: fc
+        state: absent
+      loop: "{{ aci_test.domains }}"
+
+    - name: Remove FC domain test VSAN pools
+      cisco.aci.aci_encap_pool:
+        <<: *aci_info
+        pool: "{{ item.name }}"
+        pool_type: vsan
+        pool_allocation_mode: "{{ item.mode }}"
+        state: absent
+      loop: "{{ aci_test.pools }}"
