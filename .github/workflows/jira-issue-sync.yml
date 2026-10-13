@@ -3,8 +3,6 @@ name: Sync GitHub Issues & Pull Requests to Jira
 on:
   pull_request_target:
     types:
-      - assigned
-      - unassigned
       - labeled
       - unlabeled
       - opened
@@ -14,26 +12,32 @@ on:
       - synchronize
       - converted_to_draft
       - ready_for_review
-      - locked
-      - unlocked
       - review_requested
-      - review_request_removed
-      - auto_merge_enabled
-      - auto_merge_disabled
   workflow_run:
     workflows: [jira-issue-sync-pr-review]
     types:
       - completed
   issues:
   issue_comment:
-concurrency: jira_issues
+
+concurrency:
+  group: jira-sync-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.id }}
+  cancel-in-progress: true
 
 jobs:
   sync_issues_to_jira:
+    if: |
+      contains(github.event.issue.labels.*.name, 'jira-sync') ||
+      contains(github.event.pull_request.labels.*.name, 'jira-sync') ||
+      github.event.workflow_run.event == 'pull_request_review'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - name: Sync GitHub Issues & Pull Requests to Jira
-        uses: ciscoecosystem/sync-jira-actions@v1
+        uses: ciscoecosystem/sync-jira-actions@a0196e237463d1ff9aa2e1de4675cde63e9cd8a5 # v1.4.6
         with:
           sync_label: jira-sync
           status_field_id: 10740

@@ -6,5 +6,6 @@ on:
 jobs:
   review:
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - run: echo "A PR review was added or modified, triggering jira-issue-sync."
