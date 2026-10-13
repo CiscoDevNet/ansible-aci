@@ -1,0 +1,370 @@
+# Test code for the ACI modules
+# Copyright: (c) 2026, Cisco Systems, Inc.
+# Copyright: (c) 2026, Akini Ross (@akinross)
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Physical domain binding lifecycle test.
+
+- name: Set physical-domain test variables
+  ansible.builtin.set_fact:
+    aci_info: &aci_info
+      host: "{{ aci_hostname }}"
+      username: "{{ aci_username }}"
+      password: "{{ aci_password }}"
+      validate_certs: "{{ aci_validate_certs | default(false) }}"
+      use_ssl: "{{ aci_use_ssl | default(true) }}"
+      use_proxy: "{{ aci_use_proxy | default(true) }}"
+      output_level: "{{ aci_output_level | default('info') }}"
+    aci_test:
+      domains:
+        - physical_encap_test_1
+        - physical_encap_test_2
+        - physical_encap_test_3
+      pools:
+        - name: physical_encap_pool
+          pool_type: vlan
+          mode: dynamic
+          target_dn: uni/infra/vlanns-[physical_encap_pool]-dynamic
+          domain_dn: uni/phys-physical_encap_test_1/rsvlanNs
+        - name: physical_encap_pool_updated
+          pool_type: vlan
+          mode: static
+          target_dn: uni/infra/vlanns-[physical_encap_pool_updated]-static
+          domain_dn: uni/phys-physical_encap_test_1/rsvlanNs
+
+      query_domains:
+        - name: physical_query_l2
+          domain_type: l2dom
+          domain_dn: uni/l2dom-physical_query_l2/rsvlanNs
+
+- name: Test physical domain to VLAN pool binding lifecycle
+  block:
+    # TEST SETUP
+    - name: Remove physical test bindings before setup
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.0 }}"
+        domain_type: phys
+        pool: "{{ item.1.name }}"
+        pool_type: "{{ item.1.pool_type }}"
+        pool_allocation_mode: "{{ item.1.mode }}"
+        state: absent
+      loop: "{{ aci_test.domains | product(aci_test.pools) | list }}"
+
+    - name: Remove cross-domain query fixture bindings before setup
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: absent
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Remove cross-domain query fixture domains before setup
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        state: absent
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Remove physical test domains before setup
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item }}"
+        domain_type: phys
+        state: absent
+      loop: "{{ aci_test.domains }}"
+
+    - name: Remove physical test VLAN pools before setup
+      cisco.aci.aci_vlan_pool:
+        <<: *aci_info
+        pool: "{{ item.name }}"
+        pool_allocation_mode: "{{ item.mode }}"
+        state: absent
+      loop: "{{ aci_test.pools }}"
+
+    - name: Create physical test VLAN pools
+      cisco.aci.aci_vlan_pool:
+        <<: *aci_info
+        pool: "{{ item.name }}"
+        pool_allocation_mode: "{{ item.mode }}"
+        state: present
+      loop: "{{ aci_test.pools }}"
+
+    - name: Create physical test domains
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item }}"
+        domain_type: phys
+        state: present
+      loop: "{{ aci_test.domains }}"
+
+    - name: Create physical lifecycle bindings for query-all coverage
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item }}"
+        domain_type: phys
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: present
+      loop: "{{ aci_test.domains[1:] }}"
+
+    - name: Create cross-domain query fixture domains
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        state: present
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Create cross-domain query fixture bindings
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: present
+      loop: "{{ aci_test.query_domains }}"
+
+    # CREATE
+    - name: Create physical domain binding in check mode
+      cisco.aci.aci_domain_to_encap_pool: &physical_binding_initial
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: phys
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: present
+      check_mode: true
+      register: cm_create_physical_binding
+
+    - name: Create physical domain binding
+      cisco.aci.aci_domain_to_encap_pool: *physical_binding_initial
+      register: nm_create_physical_binding
+
+    - name: Create physical domain binding again
+      cisco.aci.aci_domain_to_encap_pool: *physical_binding_initial
+      register: nm_create_physical_binding_again
+
+    - name: Assert physical domain binding CREATE results
+      ansible.builtin.assert:
+        that:
+          - cm_create_physical_binding is changed
+          - cm_create_physical_binding.previous == []
+          - cm_create_physical_binding.current == []
+          - cm_create_physical_binding.proposed.infraRsVlanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - nm_create_physical_binding is changed
+          - nm_create_physical_binding.previous == []
+          - nm_create_physical_binding.current.0.infraRsVlanNs.attributes.dn == aci_test.pools[0].domain_dn
+          - nm_create_physical_binding.current.0.infraRsVlanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - nm_create_physical_binding_again is not changed
+          - nm_create_physical_binding_again.previous == nm_create_physical_binding_again.current
+
+    # UPDATE
+    - name: Update physical domain binding in check mode
+      cisco.aci.aci_domain_to_encap_pool: &physical_binding_updated
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: phys
+        pool: "{{ aci_test.pools[1].name }}"
+        pool_type: "{{ aci_test.pools[1].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[1].mode }}"
+        state: present
+      check_mode: true
+      register: cm_update_physical_binding
+
+    - name: Update physical domain binding
+      cisco.aci.aci_domain_to_encap_pool: *physical_binding_updated
+      register: nm_update_physical_binding
+
+    - name: Update physical domain binding again
+      cisco.aci.aci_domain_to_encap_pool: *physical_binding_updated
+      register: nm_update_physical_binding_again
+
+    - name: Assert physical domain binding UPDATE results
+      ansible.builtin.assert:
+        that:
+          - cm_update_physical_binding is changed
+          - cm_update_physical_binding.previous.0.infraRsVlanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - cm_update_physical_binding.current.0.infraRsVlanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - cm_update_physical_binding.proposed.infraRsVlanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - nm_update_physical_binding is changed
+          - nm_update_physical_binding.previous.0.infraRsVlanNs.attributes.tDn == aci_test.pools[0].target_dn
+          - nm_update_physical_binding.current.0.infraRsVlanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - nm_update_physical_binding_again is not changed
+          - nm_update_physical_binding_again.previous == nm_update_physical_binding_again.current
+
+    # QUERY
+    - name: Query specific physical domain binding
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: phys
+        pool: "{{ aci_test.pools[1].name }}"
+        pool_type: "{{ aci_test.pools[1].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[1].mode }}"
+        state: query
+      register: query_physical_binding
+
+    - name: Query all VLAN pool bindings
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        pool_type: vlan
+        state: query
+      register: query_all_physical_pool_type_bindings
+
+    - name: Query bindings by VLAN pool without a domain-type filter
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: vlan
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: query
+      register: query_all_physical_pool_bindings
+
+    - name: Query bindings filtered by physical domain type and pool
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain_type: phys
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: vlan
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: query
+      register: query_all_physical_domain_pool_bindings
+
+    - name: Query all bindings filtered to physical domains
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain_type: phys
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        state: query
+      register: query_all_physical_bindings
+
+    - name: Assert physical domain query results
+      ansible.builtin.assert:
+        that:
+          - query_physical_binding is not changed
+          - query_physical_binding.current | length == 1
+          - query_physical_binding.current.0.infraRsVlanNs.attributes.dn == aci_test.pools[1].domain_dn
+          - query_physical_binding.current.0.infraRsVlanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - query_all_physical_bindings is not changed
+          - query_all_physical_bindings.current | length >= 3
+          - "query_all_physical_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', 'uni/phys-' ~ aci_test.domains[0] ~ '/rsvlanNs') | list | length == 1"
+          - "query_all_physical_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', 'uni/phys-' ~ aci_test.domains[1] ~ '/rsvlanNs') | list | length == 1"
+          - "query_all_physical_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', 'uni/phys-' ~ aci_test.domains[2] ~ '/rsvlanNs') | list | length == 1"
+          - query_all_physical_pool_type_bindings is not changed
+          - query_all_physical_pool_bindings is not changed
+          - query_all_physical_domain_pool_bindings is not changed
+          - "query_all_physical_pool_type_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', aci_test.query_domains[0].domain_dn) | list | length == 1"
+          - "query_all_physical_pool_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', aci_test.query_domains[0].domain_dn) | list | length == 1"
+          - "query_all_physical_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', aci_test.query_domains[0].domain_dn) | list | length == 0"
+          - "query_all_physical_pool_type_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', 'uni/phys-' ~ aci_test.domains[1] ~ '/rsvlanNs') | list | length == 1"
+          - "query_all_physical_pool_type_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', 'uni/phys-' ~ aci_test.domains[2] ~ '/rsvlanNs') | list | length == 1"
+          - "query_all_physical_pool_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', 'uni/phys-' ~ aci_test.domains[1] ~ '/rsvlanNs') | list | length == 1"
+          - "query_all_physical_pool_bindings.current | selectattr('infraRsVlanNs.attributes.dn', 'equalto', 'uni/phys-' ~ aci_test.domains[2] ~ '/rsvlanNs') | list | length == 1"
+          - query_all_physical_domain_pool_bindings.current | length == 2
+
+    # DELETE
+    - name: Delete physical domain binding in check mode
+      cisco.aci.aci_domain_to_encap_pool: &physical_binding_absent
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: phys
+        pool: "{{ aci_test.pools[1].name }}"
+        pool_type: "{{ aci_test.pools[1].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[1].mode }}"
+        state: absent
+      check_mode: true
+      register: cm_delete_physical_binding
+
+    - name: Delete physical domain binding
+      cisco.aci.aci_domain_to_encap_pool: *physical_binding_absent
+      register: nm_delete_physical_binding
+
+    - name: Delete physical domain binding again
+      cisco.aci.aci_domain_to_encap_pool: *physical_binding_absent
+      register: nm_delete_physical_binding_again
+
+    - name: Query physical domain after deleting binding
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ aci_test.domains[0] }}"
+        domain_type: phys
+        state: query
+      register: query_physical_domain_after_binding_delete
+
+    - name: Assert physical domain DELETE results
+      ansible.builtin.assert:
+        that:
+          - cm_delete_physical_binding is changed
+          - cm_delete_physical_binding.previous.0.infraRsVlanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - cm_delete_physical_binding.current.0.infraRsVlanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - nm_delete_physical_binding is changed
+          - nm_delete_physical_binding.previous.0.infraRsVlanNs.attributes.tDn == aci_test.pools[1].target_dn
+          - nm_delete_physical_binding.current == []
+          - nm_delete_physical_binding_again is not changed
+          - nm_delete_physical_binding_again.previous == nm_delete_physical_binding_again.current
+          - query_physical_domain_after_binding_delete is not changed
+          - query_physical_domain_after_binding_delete.current | length == 1
+          - query_physical_domain_after_binding_delete.current.0.physDomP.attributes.name == aci_test.domains[0]
+
+  always:
+    # CLEANUP
+    - name: Remove remaining cross-domain query fixture bindings
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        pool: "{{ aci_test.pools[0].name }}"
+        pool_type: "{{ aci_test.pools[0].pool_type }}"
+        pool_allocation_mode: "{{ aci_test.pools[0].mode }}"
+        state: absent
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Remove cross-domain query fixture domains
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item.name }}"
+        domain_type: "{{ item.domain_type }}"
+        vm_provider: "{{ item.vm_provider | default(omit) }}"
+        state: absent
+      loop: "{{ aci_test.query_domains }}"
+
+    - name: Remove remaining physical test bindings
+      cisco.aci.aci_domain_to_encap_pool:
+        <<: *aci_info
+        domain: "{{ item.0 }}"
+        domain_type: phys
+        pool: "{{ item.1.name }}"
+        pool_type: "{{ item.1.pool_type }}"
+        pool_allocation_mode: "{{ item.1.mode }}"
+        state: absent
+      loop: "{{ aci_test.domains | product(aci_test.pools) | list }}"
+
+    - name: Remove physical test domains
+      cisco.aci.aci_domain:
+        <<: *aci_info
+        domain: "{{ item }}"
+        domain_type: phys
+        state: absent
+      loop: "{{ aci_test.domains }}"
+
+    - name: Remove physical test VLAN pools
+      cisco.aci.aci_vlan_pool:
+        <<: *aci_info
+        pool: "{{ item.name }}"
+        pool_allocation_mode: "{{ item.mode }}"
+        state: absent
+      loop: "{{ aci_test.pools }}"
