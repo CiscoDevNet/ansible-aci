@@ -2,7 +2,7 @@
 namespace: cisco
 name: aci
 # The version of the collection. Must be compatible with semantic versioning
-version: 2.13.0
+version: 3.0.0
 readme: README.md
 authors:
 - Dag Wieers (@dagwieers) <dag@wieers.com>
@@ -16,6 +16,12 @@ authors:
 - Devarshi Shah (@devarshishah3)
 - Ramses Smeyers (@rsmeyers)
 - Lionel Hercot (@lhercot) <lhercot@cisco.com>
+- Samita Bhattacharjee (@samiib) <samitab@cisco.com>
+- Akini Ross (@akinross) <akinross@cisco.com>
+- Shreyas Srish (@shrsr) <ssrish@cisco.com>
+- Sabari Jaganathan (@sajagana) <sajagana@cisco.com>
+- Anvitha Jain (@anvitha-jain) <anvjain@cisco.com>
+- Gaspard Micol (@gmicol) <gmicol@cisco.com>
 description: Ansible Modules for Cisco ACI
 license_file: 'LICENSE'
 tags: 
