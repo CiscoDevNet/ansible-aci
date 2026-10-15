@@ -129,7 +129,7 @@ There are two main methods to optimize the execution of ACI modules in your play
 1. Using the ACI HTTPAPI plugin
 1. Using the `suppress_` options
 
-To find out more about optimizing playbook execution, please refer to the [Optimizing Playbooks](docs/optimizing.md) documentation.
+To find out more about optimizing playbook execution, please refer to the [Optimizing Playbooks](https://github.com/CiscoDevNet/ansible-aci/blob/main/docs/optimizing.md) documentation.
 
 ## Testing
 
