@@ -4,6 +4,30 @@ Cisco ACI Ansible Collection Release Notes
 
 .. contents:: Topics
 
+v3.0.0
+======
+
+Release Summary
+---------------
+
+Release v3.0.0 of the ``ansible-aci`` collection on 2026-10-15.
+This changelog describes all changes made to the modules and plugins included in this collection since v2.13.0.
+
+Minor Changes
+-------------
+
+- Add epgs option to aci_bulk_static_binding_to_epg module.
+- Add support for nameAlias attribute in aci_l4l7_device module (#833)
+- Add warning for default port_type behaviour in aci_interface_config module
+- Allow query all objects by removing required attributes for query operations of aci_l3out_interface, aci_l3out_floating_svi, aci_l3out_floating_svi_path, aci_l3out_floating_svi_secondary_ip, aci_l3out_floating_svi_path_secondary_ip, aci_l3out_extsubnet
+
+Bugfixes
+--------
+
+- Ensure ansible connection local uses correct base url for aci_access_span_src_group, aci_access_span_src_group_src, and aci_fabric_span_src_group
+- Preserve ACI domains on state absent and filter query-all bindings
+- Remove the need of required path attributes on create and update to allow for vnic configuration without path in aci_l4l7_concrete_interface module
+
 v2.13.0
 =======
 
