@@ -262,7 +262,7 @@ def listify_worker(d, keys, depth, cache, prefix):
     prefix += keys[depth] + "_"
 
     if keys[depth] in d:
-        for item in d[keys[depth]] or []: # Fallback to empty list to avoid crashing when key is empty
+        for item in d[keys[depth]] or []:  # Fallback to empty list to avoid crashing when key is empty
             cache_work = cache.copy()
             if isinstance(item, dict):
                 for k, v in item.items():
