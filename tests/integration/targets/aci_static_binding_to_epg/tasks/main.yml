@@ -42,6 +42,7 @@
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_absent
       interface_type: fex_port_channel
+      interface: 'ansible_test'
       extpaths: 1011
 
   - name: Ensure static path to epg is deleted
@@ -388,6 +389,7 @@
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_present
       interface_type: fex_port_channel
+      interface: 'ansible_test'
       extpaths: 1011
     check_mode: true
     register: cm_fex_port_channel
@@ -396,6 +398,7 @@
     cisco.aci.aci_static_binding_to_epg:
       <<: *aci_static_binding_to_epg_present
       interface_type: fex_port_channel
+      interface: 'ansible_test'
       extpaths: 1011
     register: nm_fex_port_channel
 
@@ -475,8 +478,8 @@
         - cm_fex_port_channel is changed
         - nm_fex_port_channel is changed
         - cm_fex_port_channel.previous == nm_fex_port_channel.previous == []
-        - cm_fex_port_channel.proposed.fvRsPathAtt.attributes.dn == 'uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/extpaths-1011/pathep-[1/7]]'
-        - nm_fex_port_channel.current.0.fvRsPathAtt.attributes.dn == 'uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/extpaths-1011/pathep-[1/7]]'
+        - cm_fex_port_channel.proposed.fvRsPathAtt.attributes.dn == 'uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/extpaths-1011/pathep-[ansible_test]]'
+        - nm_fex_port_channel.current.0.fvRsPathAtt.attributes.dn == 'uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/paths-101/extpaths-1011/pathep-[ansible_test]]'
         - nm_fex_vpc is changed
         - nm_fex_vpc.previous == []
         - nm_fex_vpc.current.0.fvRsPathAtt.attributes.dn == 'uni/tn-ansible_test/ap-anstest/epg-anstest/rspathAtt-[topology/pod-1/protpaths-101-102/extprotpaths-103-104/pathep-[ansible_test]]'
