@@ -272,12 +272,12 @@
         - cm_update_bd_2.proposed.fvBD.children.1.fvRsBDToFhs.attributes.tnFhsBDPolName == ''
         - cm_update_bd_2.proposed.fvBD.children.2.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == ''
         - nm_update_bd_2 is changed
-        - nm_update_bd_2.previous.0.fvBD.children.0.fvRsMldsn.attributes.tnMldSnoopPolName == 'ansible_mld_snoop'
-        - nm_update_bd_2.previous.0.fvBD.children.1.fvRsBDToFhs.attributes.tnFhsBDPolName == 'ansible_fhs'
-        - nm_update_bd_2.previous.0.fvBD.children.2.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
-        - nm_update_bd_2.current.0.fvBD.children.0.fvRsMldsn.attributes.tnMldSnoopPolName == ''
-        - nm_update_bd_2.current.0.fvBD.children.1.fvRsBDToFhs.attributes.tnFhsBDPolName == ''
-        - nm_update_bd_2.current.0.fvBD.children.2.igmpIfP.children.0.igmpRsIfPol.attributes.tDn == ''
+        - (nm_update_bd_2.previous.0.fvBD.children | selectattr('fvRsMldsn', 'defined') | map(attribute='fvRsMldsn') | first).attributes.tnMldSnoopPolName == 'ansible_mld_snoop'
+        - (nm_update_bd_2.previous.0.fvBD.children | selectattr('fvRsBDToFhs', 'defined') | map(attribute='fvRsBDToFhs') | first).attributes.tnFhsBDPolName == 'ansible_fhs'
+        - (nm_update_bd_2.previous.0.fvBD.children | selectattr('igmpIfP', 'defined') | map(attribute='igmpIfP') | first).children.0.igmpRsIfPol.attributes.tDn == 'uni/tn-ansible_test/igmpIfPol-ansible_igmp_pol'
+        - (nm_update_bd_2.current.0.fvBD.children | selectattr('fvRsMldsn', 'defined') | map(attribute='fvRsMldsn') | first).attributes.tnMldSnoopPolName == ''
+        - (nm_update_bd_2.current.0.fvBD.children | selectattr('fvRsBDToFhs', 'defined') | map(attribute='fvRsBDToFhs') | first).attributes.tnFhsBDPolName == ''
+        - (nm_update_bd_2.current.0.fvBD.children | selectattr('igmpIfP', 'defined') | map(attribute='igmpIfP') | first).children.0.igmpRsIfPol.attributes.tDn == ''
         - nm_update_bd_2_again is not changed
         - nm_update_bd_2_again.previous == nm_update_bd_2_again.current
 
@@ -479,14 +479,14 @@
           - cm_bd_pim_s.proposed.fvBD.children.3.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
           - nm_bd_pim_s is changed
           - nm_bd_pim_s.previous == []
-          - nm_bd_pim_s.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
-          - nm_bd_pim_s.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
-          - nm_bd_pim_s_again.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
-          - nm_bd_pim_s_again.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
-          - nm_bd_pim_s_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
-          - nm_bd_pim_s_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - (nm_bd_pim_s.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children | length == 1
+          - (nm_bd_pim_s.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - (nm_bd_pim_s_again.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children | length == 1
+          - (nm_bd_pim_s_again.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - (nm_bd_pim_s_again.previous.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children | length == 1
+          - (nm_bd_pim_s_again.previous.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
           - nm_bd_pim_s_remove.previous == nm_bd_pim_s.current
-          - nm_bd_pim_s_remove.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == ''
+          - (nm_bd_pim_s_remove.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children.0.pimBDSrcFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == ''
           - cm_bd_pim_d is changed
           - cm_bd_pim_d.current == []
           - cm_bd_pim_d.previous == []
@@ -494,14 +494,14 @@
           - cm_bd_pim_d.proposed.fvBD.children.3.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
           - nm_bd_pim_d is changed
           - nm_bd_pim_d.previous == []
-          - nm_bd_pim_d.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
-          - nm_bd_pim_d.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
-          - nm_bd_pim_d_again.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
-          - nm_bd_pim_d_again.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
-          - nm_bd_pim_d_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children | length == 1
-          - nm_bd_pim_d_again.previous.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - (nm_bd_pim_d.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children | length == 1
+          - (nm_bd_pim_d.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - (nm_bd_pim_d_again.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children | length == 1
+          - (nm_bd_pim_d_again.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
+          - (nm_bd_pim_d_again.previous.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children | length == 1
+          - (nm_bd_pim_d_again.previous.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == 'uni/tn-ansible_test/rtmap-ansible_route_map_pol'
           - nm_bd_pim_d_remove.previous == nm_bd_pim_d.current
-          - nm_bd_pim_d_remove.current.0.fvBD.children.5.pimBDP.children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == ''
+          - (nm_bd_pim_d_remove.current.0.fvBD.children | selectattr('pimBDP', 'defined') | map(attribute='pimBDP') | first).children.0.pimBDFilterPol.children.0.pimBDDestFilterPol.children.0.rtdmcRsFilterToRtMapPol.attributes.tDn == ''
 
   # TEST NO VERIFICATION
   - name: create bd with no verification (check mode)
@@ -563,7 +563,8 @@
         - update_bd_present_no_verify.previous.0.fvBD.attributes.descr == "Ansible Test"
         - delete_bd_present_no_verify is changed
         - delete_bd_present_no_verify.current_verified == false
-        - delete_bd_present_no_verify.current.0 == delete_bd_present_no_verify.proposed
+        - delete_bd_present_no_verify.current == []
+        - delete_bd_present_no_verify.proposed == {}
         - delete_bd_present_no_verify.previous.0.fvBD.attributes.name == "anstest-no-verify"
         - delete_bd_present_no_verify.previous.0.fvBD.attributes.descr == "Ansible Test No Verify"
         - delete_bd_present_no_verify_again is not changed
