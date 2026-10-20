@@ -286,7 +286,8 @@
       - update_tenant_present_no_verify.previous.0.fvTenant.attributes.descr == "Ansible Test"
       - delete_tenant_present_no_verify is changed
       - delete_tenant_present_no_verify.current_verified == false
-      - delete_tenant_present_no_verify.current.0 == delete_tenant_present_no_verify.proposed
+      - delete_tenant_present_no_verify.current == []
+      - delete_tenant_present_no_verify.proposed == {}
       - delete_tenant_present_no_verify.previous.0.fvTenant.attributes.name == "anstest-no-verify"
       - delete_tenant_present_no_verify.previous.0.fvTenant.attributes.descr == "Ansible Test No Verify"
       - delete_tenant_present_no_verify_again is not changed

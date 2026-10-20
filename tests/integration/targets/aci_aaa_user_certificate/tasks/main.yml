@@ -145,7 +145,7 @@
   ansible.builtin.assert:
     that:
       - nm_query_all_rsa is not changed
-      - nm_query_all_rsa.current.0.aaaUser.children | length >= 4
+      - (nm_query_all_rsa.current.0.aaaUser.children | selectattr('aaaUserCert', 'defined') | map(attribute='aaaUserCert.attributes.name') | list | intersect(['admin', 'user', 'rsa_user'])) | length == 3
 
 - name: Query all certificates using signature-based authentication (private key content for admin certificate)
   cisco.aci.aci_aaa_user_certificate:
