@@ -53,13 +53,14 @@ extends_documentation_fragment:
 - cisco.aci.aci
 - cisco.aci.annotation
 notes:
-- The I(tenant), I(service_graph) and I(connection_name) must exist before using this module in your playbook.
-  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template)
-  and M(cisco.aci.aci_l4l7_service_graph_template_abs_conn) modules can be used for this.
+- The I(tenant), I(service_graph), I(connection_name) and I(connected_node) must exist before using this module in your playbook.
+  The M(cisco.aci.aci_tenant), M(cisco.aci.aci_l4l7_service_graph_template),
+  M(cisco.aci.aci_l4l7_service_graph_template_connection) and M(cisco.aci.aci_l4l7_service_graph_template_node)
+  modules can be used for this.
 seealso:
 - module: cisco.aci.aci_tenant
 - module: cisco.aci.aci_l4l7_service_graph_template
-- module: cisco.aci.aci_l4l7_service_graph_template_abs_connection
+- module: cisco.aci.aci_l4l7_service_graph_template_connection
 - module: cisco.aci.aci_l4l7_service_graph_template_node
 - name: APIC Management Information Model reference
   description: More information about the internal APIC class, B(vns:RsAbsConnectionConns)

@@ -44,7 +44,7 @@
 
 # ADD SERVICE GRAPH ABS CONNECTION
 - name: Create L4-L7 Service Graph Abs Connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn: &add_l4l7_abs_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection: &add_l4l7_abs_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -59,7 +59,7 @@
   register: add_l4l7_abs_conn_cm
 
 - name: Create L4-L7 Service Graph Abs Connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *add_l4l7_abs_conn
   register: add_l4l7_abs_conn
 
@@ -86,7 +86,7 @@
 
 # ADD SERVICE GRAPH ABS CONNECTION AGAIN TO TEST IDEMPOTENCE
 - name: Create L4-L7 Service Graph Abs Connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *add_l4l7_abs_conn
   register: add_l4l7_abs_conn_again
 
@@ -105,7 +105,7 @@
 
 # MODIFY SERVICE GRAPH ABS CONNECTION
 - name: Modify L4-L7 Service Graph Abs Connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -131,7 +131,7 @@
 
 # QUERY SERVICE GRAPH ABS CONNECTION
 - name: Query L4-L7 Service Graph Abs Connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -154,7 +154,7 @@
 
 # QUERY ALL SERVICE GRAPH ABS CONNECTIONS
 - name: Query all L4-L7 Service Graph Abs Connections
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *aci_info
     state: query
   register: query_l4l7_abs_conn_all
@@ -167,7 +167,7 @@
 
 # DELETE SERVICE GRAPH ABS CONNECTION
 - name: Delete L4-L7 Service Graph Abs Connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn: &delete_l4l7_abs_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection: &delete_l4l7_abs_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -177,7 +177,7 @@
   register: delete_l4l7_abs_conn_cm
 
 - name: Delete L4-L7 Service Graph Abs Connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *delete_l4l7_abs_conn
   register: delete_l4l7_abs_conn
 
@@ -200,7 +200,7 @@
 
 # DELETE ABS CONN AGAIN TO TEST IDEMPOTENCE
 - name: Delete L4-L7 Service Graph Abs Connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *delete_l4l7_abs_conn
   register: delete_l4l7_abs_conn_again
 

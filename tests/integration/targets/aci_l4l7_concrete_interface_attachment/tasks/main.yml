@@ -120,7 +120,7 @@
     state: present
 
 - name: Add a new concrete interface attachment in check mode
-  cisco.aci.aci_l4l7_concrete_interface_attach: &concrete_interface_attach
+  cisco.aci.aci_l4l7_concrete_interface_attachment: &concrete_interface_attach
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -132,17 +132,17 @@
   register: add_concrete_intf_attach_cm
 
 - name: Add a new concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach: 
+  cisco.aci.aci_l4l7_concrete_interface_attachment: 
     <<: *concrete_interface_attach
   register: add_concrete_intf_attach
 
 - name: Add a new concrete interface attachment again
-  cisco.aci.aci_l4l7_concrete_interface_attach: 
+  cisco.aci.aci_l4l7_concrete_interface_attachment: 
     <<: *concrete_interface_attach
   register: add_concrete_intf_attach_again
 
 - name: Update concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach: 
+  cisco.aci.aci_l4l7_concrete_interface_attachment: 
     <<: *concrete_interface_attach
     concrete_interface: ansible_second_concrete_interface
   register: add_concrete_intf_attach_update
@@ -164,7 +164,7 @@
     - add_concrete_intf_attach_update.current.0.vnsRsCIfAttN.attributes.dn == "uni/tn-ansible_tenant/lDevVip-ansible_device/lIf-ansible_log_intf/rscIfAttN-[uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_second_concrete_interface]]"
 
 - name: Add a second concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attachment:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -175,7 +175,7 @@
     
 # QUERY CONCRETE INTERFACE ATTACHMENT
 - name: Query concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attachment:
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -186,7 +186,7 @@
   register: query_concrete_intf_attach
 
 - name: Query all concrete interface attachments
-  cisco.aci.aci_l4l7_concrete_interface_attach:
+  cisco.aci.aci_l4l7_concrete_interface_attachment:
     <<: *aci_info
     state: query
   register: query_all_attachments
@@ -204,7 +204,7 @@
     
 # DELETE CONCRETE INTERFACE ATTACHMENT
 - name: Remove concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach: &remove_concrete_interface_attach
+  cisco.aci.aci_l4l7_concrete_interface_attachment: &remove_concrete_interface_attach
     <<: *aci_info
     tenant: ansible_tenant
     device: ansible_device
@@ -216,12 +216,12 @@
   register: delete_concrete_intf_attach_cm
 
 - name: Remove concrete interface attachment
-  cisco.aci.aci_l4l7_concrete_interface_attach: 
+  cisco.aci.aci_l4l7_concrete_interface_attachment: 
     <<: *remove_concrete_interface_attach
   register: delete_concrete_intf_attach
 
 - name: Remove concrete interface attachment again
-  cisco.aci.aci_l4l7_concrete_interface_attach: 
+  cisco.aci.aci_l4l7_concrete_interface_attachment: 
     <<: *remove_concrete_interface_attach
   register: delete_concrete_intf_attach_again
 

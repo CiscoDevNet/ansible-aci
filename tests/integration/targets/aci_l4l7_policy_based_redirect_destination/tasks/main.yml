@@ -228,23 +228,23 @@
     - add_pbr_dest_cm.proposed.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:56"
     - add_pbr_dest_cm.proposed.vnsRedirectDest.attributes.destName == "redirect_dest"
     - add_pbr_dest_cm.proposed.vnsRedirectDest.attributes.podId == "1"
-    - add_pbr_dest_cm.proposed.vnsRedirectDest.children.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - (add_pbr_dest_cm.proposed.vnsRedirectDest.children | selectattr('vnsRsRedirectHealthGroup', 'defined') | map(attribute='vnsRsRedirectHealthGroup') | first).attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
     - add_pbr_l1l2_dest_cm.proposed.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
     - add_pbr_l1l2_dest_cm.proposed.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
-    - add_pbr_l1l2_dest_cm.proposed.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
-    - add_pbr_l1l2_dest_cm.proposed.vnsL1L2RedirectDest.children.1.vnsRsL1L2RedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - (add_pbr_l1l2_dest_cm.proposed.vnsL1L2RedirectDest.children | selectattr('vnsRsToCIf', 'defined') | map(attribute='vnsRsToCIf') | first).attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+    - (add_pbr_l1l2_dest_cm.proposed.vnsL1L2RedirectDest.children | selectattr('vnsRsL1L2RedirectHealthGroup', 'defined') | map(attribute='vnsRsL1L2RedirectHealthGroup') | first).attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_policy/RedirectDest_ip-[192.168.10.1]"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.ip == "192.168.10.1"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.ip2 == "192.168.50.1"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:56"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.destName == "redirect_dest"
     - add_pbr_dest.current.0.vnsRedirectDest.attributes.podId == "1"
-    - add_pbr_dest.current.0.vnsRedirectDest.children.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - (add_pbr_dest.current.0.vnsRedirectDest.children | selectattr('vnsRsRedirectHealthGroup', 'defined') | map(attribute='vnsRsRedirectHealthGroup') | first).attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
     - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_l2_policy/L1L2RedirectDest-l1l2_redirect_dest"
     - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
     - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
-    - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
-    - add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children.1.vnsRsL1L2RedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - (add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children | selectattr('vnsRsToCIf', 'defined') | map(attribute='vnsRsToCIf') | first).attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+    - (add_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children | selectattr('vnsRsL1L2RedirectHealthGroup', 'defined') | map(attribute='vnsRsL1L2RedirectHealthGroup') | first).attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
 
 # ADD L4-L7 PBR DESTINATION AGAIN TO TEST IDEMPOTENCE
 - name: Add L4-L7 Policy Based Redirect Destination again
@@ -270,13 +270,13 @@
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.mac == "AB:CD:EF:12:34:56"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.destName == "redirect_dest"
     - add_pbr_dest_again.current.0.vnsRedirectDest.attributes.podId == "1"
-    - add_pbr_dest_again.current.0.vnsRedirectDest.children.0.vnsRsRedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - (add_pbr_dest_again.current.0.vnsRedirectDest.children | selectattr('vnsRsRedirectHealthGroup', 'defined') | map(attribute='vnsRsRedirectHealthGroup') | first).attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
     - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.attributes.dn == "uni/tn-ansible_tenant/svcCont/svcRedirectPol-ansible_pbr_l2_policy/L1L2RedirectDest-l1l2_redirect_dest"
     - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:57"
     - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
     - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.attributes.podId == "1"
-    - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
-    - add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.children.1.vnsRsL1L2RedirectHealthGroup.attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
+    - (add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.children | selectattr('vnsRsToCIf', 'defined') | map(attribute='vnsRsToCIf') | first).attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+    - (add_pbr_l1l2_dest_again.current.0.vnsL1L2RedirectDest.children | selectattr('vnsRsL1L2RedirectHealthGroup', 'defined') | map(attribute='vnsRsL1L2RedirectHealthGroup') | first).attributes.tDn == "uni/tn-ansible_tenant/svcCont/redirectHealthGroup-ansible_health_group"
 
 # TEST ERROR CHECKING
 - name: Add L4-L7 L1/L2 Policy Based Redirect Destination with ip
@@ -428,7 +428,7 @@
     - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:58"
     - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
     - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.attributes.podId == "1"
-    - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+    - (update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children | selectattr('vnsRsToCIf', 'defined') | map(attribute='vnsRsToCIf') | first).attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
     - update_pbr_l1l2_dest.current.0.vnsL1L2RedirectDest.children | length == 1
 
 - name: Execute tasks only for ACI v6+
@@ -490,7 +490,7 @@
     - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.attributes.mac == "AB:CD:EF:12:34:58"
     - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.attributes.destName == "l1l2_redirect_dest"
     - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.attributes.podId == "1"
-    - query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.children.0.vnsRsToCIf.attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
+    - (query_l1l2_pbr_dest.current.0.vnsL1L2RedirectDest.children | selectattr('vnsRsToCIf', 'defined') | map(attribute='vnsRsToCIf') | first).attributes.tDn == "uni/tn-ansible_tenant/lDevVip-ansible_device/cDev-ansible_concrete_device/cIf-[ansible_concrete_interface]"
 
 - name: Query All L4-L7 Policy Based Redirect L3 Destinations
   cisco.aci.aci_l4l7_policy_based_redirect_destination:

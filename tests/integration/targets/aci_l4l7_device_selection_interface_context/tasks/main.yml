@@ -184,7 +184,7 @@
 
 # CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
 - name: Create L4-L7 Device Selection Logical Interface Context in check mode
-  cisco.aci.aci_l4l7_device_selection_if_context: &add_context
+  cisco.aci.aci_l4l7_device_selection_interface_context: &add_context
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -200,7 +200,7 @@
   register: add_context_cm
 
 - name: Create L4-L7 Device Selection Logical Interface Context
-  cisco.aci.aci_l4l7_device_selection_if_context: 
+  cisco.aci.aci_l4l7_device_selection_interface_context: 
     <<: *add_context
   register: add_context
 
@@ -224,7 +224,7 @@
 
 # CREATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
 - name: Create L4-L7 Device Selection Logical Interface Context again
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *add_context
   register: add_context_again
 
@@ -247,7 +247,7 @@
   - version.current.0.topSystem.attributes.version is version('6', '>=')
   block:
   - name: Create L4-L7 Device Selection Logical Interface Context with new attributes
-    cisco.aci.aci_l4l7_device_selection_if_context:
+    cisco.aci.aci_l4l7_device_selection_interface_context:
       <<: *aci_info
       tenant: ansible_tenant
       contract: ansible_contract
@@ -274,7 +274,7 @@
 
 # UPDATE L4-L7 DEVICE SELECTION LOGICAL INTERFACE CONTEXT
 - name: Modify L4-L7 Device Selection Logical Interface Context
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -296,7 +296,7 @@
     - update_context.current.0.vnsLIfCtx.children | length == 1
 
 - name: Remove L4-L7 Device Selection Logical Interface Context BD
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -315,7 +315,7 @@
     - update_context.current.0.vnsLIfCtx.children is not defined
 
 - name: Re-add L4-L7 Device Selection Logical Interface Context BD binding
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -328,7 +328,7 @@
   register: re_add_bd
 
 - name: Modify L4-L7 Device Selection Logical Interface Context by replacing BD with External EPG
-  cisco.aci.aci_l4l7_device_selection_if_context: &interface_external_epg
+  cisco.aci.aci_l4l7_device_selection_interface_context: &interface_external_epg
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -343,21 +343,21 @@
   register: add_external_epg
 
 - name: Modify L4-L7 Device Selection Logical Interface Context by changing redistribute
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *interface_external_epg
     l3out_tenant:
     redistribute: ["static"]
   register: update_external_epg
 
 - name: Modify L4-L7 Device Selection Logical Interface Context by clearing redistribute
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *interface_external_epg
     l3out_tenant:
     redistribute: []
   register: update_external_epg_clear_redistribute
 
 - name: Remove External EPG
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *interface_external_epg
     l3out:
   register: remove_external_epg
@@ -379,7 +379,7 @@
 
 # QUERY L4-L7 DEVICE SELECTION INTERFACE CONTEXT
 - name: Query L4-L7 Device Selection Logical Interface Context
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -398,7 +398,7 @@
 
 # QUERY ALL L4-L7 DEVICE SELECTION INTERFACE CONTEXTS
 - name: Query all L4-L7 Device Selection Logical Interface Contexts
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *aci_info
     state: query
   register: query_all_contexts
@@ -410,7 +410,7 @@
 
 # DELETE L4-L7 DEVICE SELECTION INTERFACE CONTEXT
 - name: Delete L4-L7 Device Selection Logical Interface Context in check mode
-  cisco.aci.aci_l4l7_device_selection_if_context: &delete_context
+  cisco.aci.aci_l4l7_device_selection_interface_context: &delete_context
     <<: *aci_info
     tenant: ansible_tenant
     contract: ansible_contract
@@ -422,7 +422,7 @@
   register: delete_context_cm
 
 - name: Delete L4-L7 Device Selection Logical Interface Context
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *delete_context
   register: delete_context
 
@@ -439,7 +439,7 @@
 
 # DELETE L4-L7 DEVICE SELECTION INTERFACE CONTEXT AGAIN TO TEST IDEMPOTENCE
 - name: Delete L4-L7 Device Selection Logical Interface Context again
-  cisco.aci.aci_l4l7_device_selection_if_context:
+  cisco.aci.aci_l4l7_device_selection_interface_context:
     <<: *delete_context
   register: delete_context_again
 
