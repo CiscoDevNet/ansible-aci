@@ -117,7 +117,7 @@
 
 # ADD SERVICE GRAPH ABS CONNECTIONS
 - name: Create L4-L7 Service Graph Abs Connection C1
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -128,7 +128,7 @@
     state: present
 
 - name: Create L4-L7 Service Graph Abs Connection C2
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -139,7 +139,7 @@
     state: present
 
 - name: Create L4-L7 Service Graph Abs Connection C3
-  cisco.aci.aci_l4l7_service_graph_template_abs_conn:
+  cisco.aci.aci_l4l7_service_graph_template_connection:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -151,7 +151,7 @@
 
 # CREATE CONNECTION CONNS
 - name: Add C1 node connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &add_c1_node_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &add_c1_node_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -163,12 +163,12 @@
   register: add_c1_node_conn_cm
 
 - name: Add C1 node connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c1_node_conn
   register: add_c1_node_conn
 
 - name: Add C1 term connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &add_c1_term_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &add_c1_term_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -179,12 +179,12 @@
   register: add_c1_term_conn_cm
 
 - name: Add C1 term connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c1_term_conn
   register: add_c1_term_conn
 
 - name: Add C2 provider connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &add_c2_prov_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &add_c2_prov_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -196,12 +196,12 @@
   register: add_c2_prov_conn_cm
 
 - name: Add C2 provider connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c2_prov_conn
   register: add_c2_prov_conn
 
 - name: Add C2 consumer connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &add_c2_cons_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &add_c2_cons_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -213,12 +213,12 @@
   register: add_c2_cons_conn_cm
 
 - name: Add C2 consumer connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c2_cons_conn
   register: add_c2_cons_conn
 
 - name: Add C3 node connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &add_c3_node_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &add_c3_node_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -230,12 +230,12 @@
   register: add_c3_node_conn_cm
 
 - name: Add C3 node connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c3_node_conn
   register: add_c3_node_conn
 
 - name: Add C3 term connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &add_c3_term_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &add_c3_term_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -246,7 +246,7 @@
   register: add_c3_term_conn_cm
 
 - name: Add C3 term connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c3_term_conn
   register: add_c3_term_conn
 
@@ -313,32 +313,32 @@
 
 # ADD CONNECTIONS AGAIN TO TEST IDEMPOTENCE
 - name: Add C1 node connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c1_node_conn
   register: add_c1_node_conn_again
 
 - name: Add C1 term connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c1_term_conn
   register: add_c1_term_conn_again
 
 - name: Add C2 provider connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c2_prov_conn
   register: add_c2_prov_conn_again
 
 - name: Add C2 consumer connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c2_cons_conn
   register: add_c2_cons_conn_again
 
 - name: Add C3 node connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c3_node_conn
   register: add_c3_node_conn_again
 
 - name: Add C3 term connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *add_c3_term_conn
   register: add_c3_term_conn_again
 
@@ -387,7 +387,7 @@
 
 # QUERY CONNECTION ATTRIBUTES
 - name: Query C1 node connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -398,7 +398,7 @@
   register: query_c1_node_conn
 
 - name: Query C1 term connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -408,7 +408,7 @@
   register: query_c1_term_conn
 
 - name: Query C2 provider connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -419,7 +419,7 @@
   register: query_c2_prov_conn
 
 - name: Query C2 consumer connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -430,7 +430,7 @@
   register: query_c2_cons_conn
 
 - name: Query C3 node connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -441,7 +441,7 @@
   register: query_c3_node_conn
 
 - name: Query C3 term connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -495,7 +495,7 @@
 # DELETE CONNECTIONS
 # Delete C1 Node Connection
 - name: Delete C1 node connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &delete_c1_node_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &delete_c1_node_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -507,13 +507,13 @@
   register: delete_c1_node_conn_cm
 
 - name: Delete C1 node connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c1_node_conn
   register: delete_c1_node_conn
 
 # Delete C1 Term Connection
 - name: Delete C1 term connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &delete_c1_term_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &delete_c1_term_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -524,13 +524,13 @@
   register: delete_c1_term_conn_cm
 
 - name: Delete C1 term connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c1_term_conn
   register: delete_c1_term_conn
 
 # Delete C2 Provider Connection
 - name: Delete C2 provider connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &delete_c2_prov_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &delete_c2_prov_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -542,13 +542,13 @@
   register: delete_c2_prov_conn_cm
 
 - name: Delete C2 provider connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c2_prov_conn
   register: delete_c2_prov_conn
 
 # Delete C2 Consumer Connection
 - name: Delete C2 consumer connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &delete_c2_cons_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &delete_c2_cons_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -560,13 +560,13 @@
   register: delete_c2_cons_conn_cm
 
 - name: Delete C2 consumer connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c2_cons_conn
   register: delete_c2_cons_conn
 
 # Delete C3 Node Connection
 - name: Delete C3 node connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &delete_c3_node_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &delete_c3_node_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -578,13 +578,13 @@
   register: delete_c3_node_conn_cm
 
 - name: Delete C3 node connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c3_node_conn
   register: delete_c3_node_conn
 
 # Delete C3 Term Connection
 - name: Delete C3 term connection in check mode
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns: &delete_c3_term_conn
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector: &delete_c3_term_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -595,7 +595,7 @@
   register: delete_c3_term_conn_cm
 
 - name: Delete C3 term connection
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c3_term_conn
   register: delete_c3_term_conn
 
@@ -667,32 +667,32 @@
 
 # REMOVE CONNECTIONS AGAIN TO TEST IDEMPOTENCE
 - name: Delete C1 node connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c1_node_conn
   register: delete_c1_node_conn_again
 
 - name: Delete C1 term connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c1_term_conn
   register: delete_c1_term_conn_again
 
 - name: Delete C2 provider connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c2_prov_conn
   register: delete_c2_prov_conn_again
 
 - name: Delete C2 consumer connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c2_cons_conn
   register: delete_c2_cons_conn_again
 
 - name: Delete C3 node connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c3_node_conn
   register: delete_c3_node_conn_again
 
 - name: Delete C3 term connection again
-  cisco.aci.aci_l4l7_service_graph_template_abs_connection_conns:
+  cisco.aci.aci_l4l7_service_graph_template_connection_to_connector:
     <<: *delete_c3_term_conn
   register: delete_c3_term_conn_again
 

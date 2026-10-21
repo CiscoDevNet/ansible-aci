@@ -89,7 +89,7 @@
 
 # ADD FUNCTIONAL CONNECTIONS
 - name: Create Consumer Func Conn in check mode
-  cisco.aci.aci_l4l7_service_graph_template_func_conn: &add_cons_func_conn
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection: &add_cons_func_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -100,7 +100,7 @@
   register: add_cons_func_conn_cm
 
 - name: Create Provider Func Conn in check mode
-  cisco.aci.aci_l4l7_service_graph_template_func_conn: &add_prov_func_conn
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection: &add_prov_func_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -111,12 +111,12 @@
   register: add_prov_func_conn_cm
 
 - name: Create Consumer Func Conn 
-  cisco.aci.aci_l4l7_service_graph_template_func_conn: 
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection: 
     <<: *add_cons_func_conn
   register: add_cons_func_conn
 
 - name: Create Provider Func Conn 
-  cisco.aci.aci_l4l7_service_graph_template_func_conn: 
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection: 
     <<: *add_prov_func_conn
   register: add_prov_func_conn
 
@@ -143,12 +143,12 @@
 
 # ADD FUNC CONNS AGAIN TO TEST IDEMPOTENCE
 - name: Add Consumer Func Conn again
-  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection:
     <<: *add_cons_func_conn
   register: add_cons_func_conn_again
 
 - name: Add Provider Func Conn again
-  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection:
     <<: *add_prov_func_conn
   register: add_prov_func_conn_again
 
@@ -171,7 +171,7 @@
   - version.current.0.topSystem.attributes.version is version('5', '>=')
   block:
   - name: Modify Provider Func Conn with new attributes
-    cisco.aci.aci_l4l7_service_graph_template_func_conn:
+    cisco.aci.aci_l4l7_service_graph_template_functional_connection:
       <<: *aci_info
       tenant: ansible_tenant
       service_graph: ansible_graph
@@ -189,7 +189,7 @@
 
 # QUERY FUNC CONNS
 - name: Query Consumer Func Conn
-  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -199,7 +199,7 @@
   register: query_cons_func_conn
 
 - name: Query Provider Func Conn
-  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection:
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -225,7 +225,7 @@
 
 # QUERY ALL FUNC CONNS
 - name: Query All Func Conns
-  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection:
     <<: *aci_info
     state: query
   register: query_func_conn_all
@@ -238,7 +238,7 @@
 
 # DELETE FUNC CONNS
 - name: Delete Consumer Func Conn in check mode
-  cisco.aci.aci_l4l7_service_graph_template_func_conn: &delete_cons_func_conn
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection: &delete_cons_func_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -249,7 +249,7 @@
   register: delete_cons_func_conn_cm
 
 - name: Delete Provider Func Conn in check mode
-  cisco.aci.aci_l4l7_service_graph_template_func_conn: &delete_prov_func_conn
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection: &delete_prov_func_conn
     <<: *aci_info
     tenant: ansible_tenant
     service_graph: ansible_graph
@@ -260,12 +260,12 @@
   register: delete_prov_func_conn_cm
 
 - name: Delete Consumer Func Conn
-  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection:
     <<: *delete_cons_func_conn
   register: delete_cons_func_conn
 
 - name: Delete Provider Func Conn
-  cisco.aci.aci_l4l7_service_graph_template_func_conn: 
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection: 
     <<: *delete_prov_func_conn
   register: delete_prov_func_conn
 
@@ -294,7 +294,7 @@
 
 # DELETE FUNC CONN AGAIN TO TEST IDEMPOTENCE
 - name: Delete Consumer Func Conn again
-  cisco.aci.aci_l4l7_service_graph_template_func_conn:
+  cisco.aci.aci_l4l7_service_graph_template_functional_connection:
     <<: *delete_cons_func_conn
   register: delete_cons_func_conn_again
 
