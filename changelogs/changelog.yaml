@@ -742,3 +742,50 @@ releases:
 
         '
     release_date: '2024-04-06'
+  3.0.0:
+    changes:
+      bugfixes:
+        - Fix aci_access_span_src_group, aci_access_span_src_group_src, and aci_fabric_span_src_group_src
+          to use the correct base URL for DELETE requests when using the ansible local
+          connection.
+        - Fix aci_domain_to_encap_pool to no longer delete the domain when state is
+          absent, and to filter query results by domain_type when no domain is specified.
+        - Fix aci_l4l7_concrete_interface to allow a concrete interface to be created
+          without a path binding by no longer requiring interface, pod_id, and node_id
+          when state is present.
+      major_changes:
+        - Change aci_rest to support non-MIT API endpoints such as /api/workflows/*,
+          returning responses under data instead of imdata and totalCount for any
+          path outside /api/[node/]mo/* and /api/[node/]class/*, including paths ending
+          in .json or .xml.
+        - Remove the aci_l4l7_concrete_interface_attach module redirect, use aci_l4l7_concrete_interface_attachment
+          instead.
+        - Remove the aci_l4l7_device_selection_if_context module redirect, use aci_l4l7_device_selection_interface_context
+          instead.
+        - Remove the aci_l4l7_policy_based_redirect_dest module redirect, use aci_l4l7_policy_based_redirect_destination
+          instead.
+        - Remove the aci_l4l7_service_graph_template_abs_conn module redirect, use
+          aci_l4l7_service_graph_template_connection instead.
+        - Remove the aci_l4l7_service_graph_template_abs_connection_conns module redirect,
+          use aci_l4l7_service_graph_template_connection_to_connector instead.
+        - Remove the aci_l4l7_service_graph_template_func_conn module redirect, use
+          aci_l4l7_service_graph_template_functional_connection instead.
+      minor_changes:
+        - Add epgs option to aci_bulk_static_binding_to_epg module.
+        - Add name_alias option to aci_l4l7_device module.
+        - Add support for removing the path binding by setting the interface option
+          to an empty string in aci_l4l7_concrete_interface module.
+        - Add warning for default port_type behaviour in aci_interface_config module.
+        - Allow aci_domain_to_encap_pool to query all bindings without requiring domain_type,
+          and all VMM domain bindings without requiring vm_provider.
+        - Allow aci_l3out_interface, aci_l3out_floating_svi, aci_l3out_floating_svi_path,
+          aci_l3out_floating_svi_secondary_ip, aci_l3out_floating_svi_path_secondary_ip,
+          and aci_l3out_extsubnet to query all objects by no longer requiring parent
+          attributes for the query state.
+      release_summary: 'Release v3.0.0 of the ``ansible-aci`` collection on 2026-10-23.
+
+        This changelog describes all changes made to the modules and plugins included
+        in this collection since v2.13.0.
+
+        '
+    release_date: '2026-10-23'
