@@ -37,7 +37,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Sync GitHub Issues & Pull Requests to Jira
-        uses: ciscoecosystem/sync-jira-actions@a0196e237463d1ff9aa2e1de4675cde63e9cd8a5 # v1.4.6
+        uses: ciscoecosystem/sync-jira-actions@d5a339e4cfc4bd0cf2c549973f0eb5420f5810d3 # v1.4.7
         with:
           sync_label: jira-sync
           status_field_id: 10740
