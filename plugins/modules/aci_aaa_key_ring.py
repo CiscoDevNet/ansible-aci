@@ -42,8 +42,11 @@ options:
   modulus:
     description:
     - The modulus is the length of the key in bits.
+    - Accepted values depend on the APIC software version.
+    - APIC versions 5.3 and later do not support RSA moduli of 512, 1024, or 1536 bits; 2048 bits remains supported.
+    - APIC 6.0(4c) and later also support 3072- and 4096-bit moduli.
     type: int
-    choices: [ 512, 1024, 1536, 2048 ]
+    choices: [ 512, 1024, 1536, 2048, 3072, 4096 ]
   certificate_authority:
     description:
     - The name of the Certificate Authority.
@@ -257,7 +260,7 @@ def main():
         cloud_tenant=dict(type="str", aliases=["tenant_name", "tenant"]),
         description=dict(type="str", aliases=["descr"]),
         certificate=dict(type="str", aliases=["cert_data", "certificate_data", "cert"]),
-        modulus=dict(type="int", choices=[512, 1024, 1536, 2048]),
+        modulus=dict(type="int", choices=[512, 1024, 1536, 2048, 3072, 4096]),
         certificate_authority=dict(type="str", aliases=["cert_authority", "cert_authority_name", "certificate_authority_name"]),
         key=dict(type="str", no_log=True),
         key_type=dict(type="str", choices=["rsa", "ecc"]),
